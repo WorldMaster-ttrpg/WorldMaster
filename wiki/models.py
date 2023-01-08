@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
 
 class PublishedArticlesManager(models.Manager):
+    """Queryset that returns only published articles"""
     def get_query_set(self):
         return super(PublishedArticlesManager, self).get_query_set().filter(is_published=True)
 
@@ -24,3 +25,17 @@ class Article(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super(Article, self).save(*args, **kwargs)
+
+class EditArticle(models.Model):
+    """Stores an edit session of an article"""
+
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    editor = models.ForeignKey(User, on_delete=models.CASCADE)
+    edited_on = models.DateTimeField(auto_now_add=True)
+    summary = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ['-edited_on']
+
+    def __unicode__(self):
+        return "%s - %s - %s" % (self.summary, self.editor, self.edited_on)
