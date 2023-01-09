@@ -76,7 +76,7 @@ def validate_shape(value) -> None:
     * The value must have a non-empty "points" array without repeating points.
 
         * There must be at least 3 points
-    
+
         * Each point is a part of an implicitly-closed 2D shape.
 
         * No pair of line segments may intersect.
