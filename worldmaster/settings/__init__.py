@@ -23,7 +23,8 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     #'worlds.apps.WorldsConfig'
     # TODO: uncomment when it works
-    'wiki.apps.WikiConfig',
+    # TODO: It doesn't work yet. :(
+    #'wiki.apps.WikiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
