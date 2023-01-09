@@ -1,0 +1,33 @@
+{% if messages %}
+  <div class="messages">
+	<ul>
+		{% for message in messages %}
+		  <li class="{{ message.tag }}">
+        {{ message }}
+			</li>
+		{% endfor %}
+	</ul>
+	</div>
+{% endif %}
+
+{% if not object.is_published %}
+  <label>Note: TRhis article has not been published yet.</label>
+{% endif %
+
+<h2>{{ object.title }}</h2>
+
+<p>
+	{{ object.test|restructuredtest }}
+</p>
+
+<h3>Actions</h3>
+<ul>
+	<li>
+		<a href="{% url 'wiki_article_edit' object.slug %}">Edit this article</a>
+	</li>
+	<li>
+		<a href="{% url 'wiki_article_history' object.slug %}">View article history</a>
+	</li>
+</ul>
+
+<a href="{% url wiki_article_index %}">See all</a>

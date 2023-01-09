@@ -34,6 +34,7 @@ class EditArticle(models.Model):
     editor = models.ForeignKey(User, on_delete=models.CASCADE)
     edited_on = models.DateTimeField(auto_now_add=True)
     summary = models.CharField(max_length=100)
+    objects = models.Manager()
 
     class Meta:
         ordering = ['-edited_on']
