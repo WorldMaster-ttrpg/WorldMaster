@@ -3,6 +3,7 @@
 
 from . import *
 
+LANGUAGE_CODE = LANGUAGE_CODE
 SECRET_KEY = 'django-insecure-r32v4zqj9#4o2=2fl$de7n%4^=356mzqz)02io#))t^rz0*qs*'
 
 DEBUG = True

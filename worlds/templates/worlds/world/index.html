@@ -1,0 +1,9 @@
+<h1>Worlds</h1>
+
+<ul>
+  {% for world in world_list %}
+  <li><a href="{% url 'worlds:world' world.slug %}">{{ world.name }}</a></li>
+  {% endfor %}
+</ul>
+
+<a href="{% url 'worlds:new-world' %}">Create a new world</a>
