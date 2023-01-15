@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 ALLOWED_HOSTS = []
 
@@ -21,10 +21,12 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    #'worlds.apps.WorldsConfig'
+    'worlds.apps.WorldsConfig',
     # TODO: uncomment when it works
     # TODO: It doesn't work yet. :(
     #'wiki.apps.WikiConfig',
+
+    'worldmaster.apps.WorldmasterConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -62,6 +64,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'worldmaster.wsgi.application'
+
+AUTH_USER_MODEL = 'worldmaster.User'
 
 
 
