@@ -1,0 +1,7 @@
+<h1>This is a plane named {{ plane.name }}</h1>
+
+<p>Name: {{ plane.name }}</p>
+<p>Slug: {{ plane.slug }}</p>
+<p>Description: {{ plane.description }}</p>
+
+<p><a href="{% url 'worlds:edit-plane' world.slug plane.slug %}">Edit {{ plane.name }}</a></p>

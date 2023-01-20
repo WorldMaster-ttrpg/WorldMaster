@@ -1,6 +1,8 @@
 <h1>This is a world named {{ world.name }}</h1>
 
+<p>Name: {{ world.name }}</p>
 <p>Slug: {{ world.slug }}</p>
 <p>Description: {{ world.description }}</p>
 
 <p><a href="{% url 'worlds:edit-world' world.slug %}">Edit {{ world.name }}</a></p>
+<p><a href="{% url 'worlds:new-plane' world.slug %}">Create new plane</a></p>

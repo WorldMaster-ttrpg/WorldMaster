@@ -1,0 +1,10 @@
+<form action="{% url 'worlds:new-plane' world.slug %}" method="post">
+  {% csrf_token %}
+  <fieldset>
+    <legend>Create your new plane</legend>
+    <table>
+      {{ form.as_p }}
+    </table>
+  </fieldset>
+  <input type="submit" value="Submit">
+</form>

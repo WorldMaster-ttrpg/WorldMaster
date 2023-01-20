@@ -2,8 +2,8 @@ from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpR
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import TemplateView, ListView, DetailView, View
 from django.views.decorators.http import require_http_methods
-from .models import World
-from .forms import WorldForm
+from worlds.models import World
+from worlds.forms import WorldForm
 
 class WorldsView(ListView):
     model = World
@@ -11,6 +11,7 @@ class WorldsView(ListView):
 
 class WorldView(DetailView):
     model = World
+    slug_url_kwarg = 'world_slug'
 
     template_name = 'worlds/world/detail.html'
 
@@ -27,20 +28,19 @@ class NewWorldView(View):
             return redirect(world)
         else:
             return HttpResponseBadRequest(render(request, self.template_name, {'form': form}))
+
 class EditWorldView(View):
     template_name = 'worlds/world/edit.html'
-    def get(self, request: HttpRequest, slug: str) -> HttpResponse:
-        world: World = get_object_or_404(World, slug=slug)
+    def get(self, request: HttpRequest, world_slug: str) -> HttpResponse:
+        world: World = get_object_or_404(World, slug=world_slug)
         form = WorldForm(instance=world)
         return HttpResponse(render(request, self.template_name, {'form': form, 'world': world}))
 
-    def post(self, request: HttpRequest, slug: str) -> HttpResponse:
-        world: World = get_object_or_404(World, slug=slug)
+    def post(self, request: HttpRequest, world_slug: str) -> HttpResponse:
+        world: World = get_object_or_404(World, slug=world_slug)
         form = WorldForm(request.POST, instance=world)
         if form.is_valid():
             world: World = form.save()
             return redirect(world)
         else:
             return HttpResponseBadRequest(render(request, self.template_name, {'form': form}))
-
-# Create your views here.

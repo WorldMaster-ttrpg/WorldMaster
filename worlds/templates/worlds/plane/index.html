@@ -1,0 +1,9 @@
+<h1>Planes</h1>
+
+<ul>
+  {% for plane in plane_list %}
+  <li><a href="{% url 'worlds:plane' world.slug plane.slug %}">{{ plane.name }}</a></li>
+  {% endfor %}
+</ul>
+
+<a href="{% url 'worlds:new-plane' world.slug %}">Create a new plane</a>
