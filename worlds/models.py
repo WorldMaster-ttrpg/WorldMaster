@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 from django.urls import reverse
+from worldmaster.validators import validate_not_reserved
 
 User = get_user_model()
 
@@ -20,7 +21,7 @@ class World(models.Model):
         null=False,
         blank=False,
         max_length=64,
-        validators=[MinLengthValidator(3)],
+        validators=[MinLengthValidator(3), validate_not_reserved],
     )
 
     name = models.CharField(
@@ -35,24 +36,40 @@ class World(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def get_absolute_url(self) -> str:
-        return reverse('worlds:world', kwargs={'slug': self.slug})
+        return reverse('worlds:world', kwargs={'world_slug': self.slug})
 
-# class Plane(models.Model):
-    # '''A single dimension, with a set of entities set in physical coordinates.
+class Plane(models.Model):
+    '''A single dimension, with a set of entities set in physical coordinates.
 
-    # This is a single physical universe.
-    # '''
+    This is a single physical universe.
+    '''
 
-    # world = models.ForeignKey(World, on_delete=models.CASCADE)
-    # slug = models.SlugField(null=False)
+    world = models.ForeignKey(World, null=False, blank=False, on_delete=models.CASCADE)
 
-    # description = models.TextField(null=False)
+    slug = models.SlugField(
+        null=False,
+        blank=False,
+        max_length=64,
+        validators=[MinLengthValidator(3), validate_not_reserved],
+    )
 
-    # created = models.DateTimeField(auto_now_add=True)
-    # updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(
+        null=False,
+        blank=False,
+        max_length=64,
+        validators=[MinLengthValidator(3)],
+    )
 
-    # class Meta:
-        # constraints = [
-            # models.UniqueConstraint(fields=['world', 'slug'], name='unique_world_slug'),
-        # ]
+    description = models.TextField(null=False)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['world', 'slug'], name='unique_world_slug'),
+        ]
+
+    def get_absolute_url(self) -> str:
+        return reverse('worlds:plane', kwargs={'world_slug': self.world.slug, 'plane_slug': self.slug})
 
