@@ -1,4 +1,4 @@
-<form action="{% url 'worlds:edit-plane' world.slug, plane.slug %}" method="post">
+<form action="{% url 'worlds:edit-plane' plane.world.slug plane.slug %}" method="post">
   {% csrf_token %}
   <fieldset>
     <legend>Edit {{ plane.name }}</legend>

@@ -6,6 +6,7 @@ from django.views.generic import TemplateView, ListView, DetailView, View
 from django.views.decorators.http import require_http_methods
 from worlds.models import World, Plane
 from worlds.forms import PlaneForm
+from copy import copy
 
 class PlanesView(ListView):
     model = Plane
@@ -35,45 +36,41 @@ class PlaneView(DetailView):
     def get_queryset(self):
         return Plane.objects.filter(world=self.__world)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data()
-        context['world'] = self.__world
-        return context
-
 class NewPlaneView(View):
     template_name = 'worlds/plane/new.html'
 
     def get(self, request: HttpRequest, world_slug: str) -> HttpResponse:
-        form = PlaneForm()
+        world = get_object_or_404(World, slug=world_slug)
+        form = PlaneForm(world=world)
         context = {
             'form': form,
-            'world': get_object_or_404(World, slug=world_slug),
+            'world': world,
         }
         return HttpResponse(render(request, self.template_name, context))
 
     def post(self, request: HttpRequest, world_slug: str) -> HttpResponse:
         world = get_object_or_404(World, slug=world_slug)
-        form = PlaneForm(request.POST)
+        form = PlaneForm(request.POST, world=world)
         if form.is_valid():
-            plane: Plane = form.save(commit=False)
-            plane.world = world
-            plane.save()
-            return redirect(plane)
+            return redirect(form.save())
         else:
-            return HttpResponseBadRequest(render(request, self.template_name, {'form': form}))
+            return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'world': world}))
 
 class EditPlaneView(View):
     template_name = 'worlds/plane/edit.html'
-    def get(self, request: HttpRequest, slug: str) -> HttpResponse:
-        plane: Plane = get_object_or_404(Plane, slug=slug)
+    def get(self, request: HttpRequest, world_slug: str, plane_slug: str) -> HttpResponse:
+        plane: Plane = get_object_or_404(Plane, world__slug=world_slug, slug=plane_slug)
         form = PlaneForm(instance=plane)
         return HttpResponse(render(request, self.template_name, {'form': form, 'plane': plane}))
 
-    def post(self, request: HttpRequest, slug: str) -> HttpResponse:
-        plane: Plane = get_object_or_404(Plane, slug=slug)
-        form = PlaneForm(request.POST, instance=plane)
+    def post(self, request: HttpRequest, world_slug: str, plane_slug: str) -> HttpResponse:
+        plane: Plane = get_object_or_404(Plane, slug=plane_slug)
+        # Copy the object in so that the bad request page doesn't get the
+        # modified instance. If you don't do this and you try to change the
+        # slug, even if it fails, the form action will be changed to match
+        # the attempt.
+        form = PlaneForm(request.POST, instance=copy(plane))
         if form.is_valid():
-            plane: Plane = form.save()
-            return redirect(plane)
+            return redirect(form.save())
         else:
-            return HttpResponseBadRequest(render(request, self.template_name, {'form': form}))
+            return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'plane': plane}))

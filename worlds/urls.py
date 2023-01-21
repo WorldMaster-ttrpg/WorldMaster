@@ -16,5 +16,5 @@ urlpatterns = [
     path('<slug:world_slug>/planes/', views.PlanesView.as_view(), name='planes'),
     path('<slug:world_slug>/planes/wm-new/', views.NewPlaneView.as_view(), name='new-plane'),
     path('<slug:world_slug>/planes/<slug:plane_slug>/', views.PlaneView.as_view(), name='plane'),
-    path('<slug:world_slug>/planes/<slug:plane_slug>/edit', views.PlaneView.as_view(), name='edit-plane'),
+    path('<slug:world_slug>/planes/<slug:plane_slug>/edit', views.EditPlaneView.as_view(), name='edit-plane'),
 ]
