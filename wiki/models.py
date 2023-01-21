@@ -3,41 +3,23 @@ from django.contrib.auth import get_user_model
 from django.template.defaultfilters import slugify
 User = get_user_model()
 
-class PublishedArticlesManager(models.Manager):
-    """Queryset that returns only published articles"""
-    def get_query_set(self):
-        return super(PublishedArticlesManager, self).get_query_set().filter(is_published=True)
-
 class Article(models.Model):
     """Represents a Wiki article"""
 
-    title = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=50, unique=True)
-    text = models.TextField(help_text="Formatted using ReST")
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    is_published = models.BooleanField(default=False, verbose_name="Publish?")
-    objects = models.Manager()
-    published = PublishedArticlesManager()
+    title = models.CharField(blank=False, null=False, max_length=256)
+    slug = models.SlugField(blank=False, null=False, max_length=50, unique=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
-        super(Article, self).save(*args, **kwargs)
+class Section(models.Model):
+    """Represents a part of a Wiki article"""
 
-class EditArticle(models.Model):
-    """Stores an edit session of an article"""
+    article = models.ForeignKey(Article, blank=False, null=False, on_delete=models.CASCADE)
+    text = models.TextField(blank=False, null=False, help_text='Markdown text')
 
-    article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    editor = models.ForeignKey(User, on_delete=models.CASCADE)
-    edited_on = models.DateTimeField(auto_now_add=True)
-    summary = models.CharField(max_length=100)
-    objects = models.Manager()
+    # Order is ranged 0 to 1, so articles can be edited by people who can't see all the notes without completely destroying the order. 
+    order = models.FloatField(help_text="Order, in range [0, 1]", blank=False, null=False, default=0.0)
 
-    class Meta:
-        ordering = ['-edited_on']
-
-    def __unicode__(self):
-        return "%s - %s - %s" % (self.summary, self.editor, self.edited_on)
+    def __str__(self):
+        return self.text

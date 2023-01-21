@@ -1,12 +1,12 @@
 from django import forms
-from .models import Article, EditArticle
+from .models import Article, Section
 
 class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
-        exclude = ['author', 'slug']
+        fields = ['title']
 
-class EditForm(forms.ModelForm):
+class SectionForm(forms.ModelForm):
     class Meta:
-        model = EditArticle
+        model = Section
         fields = ['summary']
