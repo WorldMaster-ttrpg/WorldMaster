@@ -17,14 +17,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
     'worlds.apps.WorldsConfig',
     # TODO: uncomment when it works
     # TODO: It doesn't work yet. :(
-    #'wiki.apps.WikiConfig',
+    'wiki.apps.WikiConfig',
 
     'worldmaster.apps.WorldmasterConfig',
     'django.contrib.admin',

@@ -6,12 +6,6 @@ User = get_user_model()
 class Article(models.Model):
     """Represents a Wiki article"""
 
-    title = models.CharField(blank=False, null=False, max_length=256)
-    slug = models.SlugField(blank=False, null=False, max_length=50, unique=True)
-
-    def __str__(self):
-        return self.title
-
 class Section(models.Model):
     """Represents a part of a Wiki article"""
 
