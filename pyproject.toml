@@ -1,0 +1,47 @@
+[project]
+name = 'worldmaster'
+version = '0.1.0'
+description = 'The WorldMaster tabletop RPG Wiki and game manager'
+readme = 'README.md'
+requires-python = '>= 3.10'
+license = { text = 'AGPL-3.0-or-later' }
+keywords = ['rpg', 'games', 'wiki']
+classifiers = [
+  'Development Status :: 2 - Pre-Alpha',
+  'Topic :: Games/Entertainment :: Role-Playing',
+  'Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Wiki',
+  'Programming Language :: Python :: 3.10',
+  'Programming Language :: Python :: 3.11',
+  'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
+]
+
+dependencies = [
+  'Django >= 4.1.5, < 4.2.0',
+  'django-stubs >= 1.13.1, < 1.14.0',
+  'django_extensions >= 3.2.1, < 4.0.0',
+  'ptpython >= 3.0.22',
+  'Werkzeug >= 2.2.2, < 3.0.0',
+]
+
+[project.urls]
+repository = 'https://gitlab.com/worldmaster-ttrpg/worldmaster'
+
+[[project.authors]]
+email = 'taywee@gmx.com'
+name = 'Taylor C. Richberger'
+
+[[project.authors]]
+email = 'btp@brandont.dev'
+name = 'Brandon Phillips'
+
+[[project.maintainers]]
+email = 'taywee@gmx.com'
+name = 'Taylor C. Richberger'
+
+[[project.maintainers]]
+email = 'btp@brandont.dev'
+name = 'Brandon Phillips'
+
+[build-system]
+requires = ['flit_core >=3.2,<4']
+build-backend = 'flit_core.buildapi'
