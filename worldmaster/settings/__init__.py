@@ -21,8 +21,6 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'worlds.apps.WorldsConfig',
-    # TODO: uncomment when it works
-    # TODO: It doesn't work yet. :(
     'wiki.apps.WikiConfig',
 
     'worldmaster.apps.WorldmasterConfig',

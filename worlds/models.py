@@ -5,18 +5,22 @@ from django.template.defaultfilters import slugify
 from django.urls import reverse
 from typing import Protocol
 from worldmaster.validators import validate_not_reserved
-from wiki.models import Article
+from wiki.models import Article, ArticleBase
 
 User = get_user_model()
 
-class Sluggable(models.Model):
-    slug = models.SlugField(
-        null=False,
-        blank=False,
-        max_length=256,
-        validators=[MinLengthValidator(3), validate_not_reserved],
-    )
+class Timestamped(models.Model):
+    '''Abstract model for timestamps.
+    '''
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        abstract = True
+
+class Slugged(models.Model):
+    '''Gives a model a name and a slug.
+    '''
     name = models.CharField(
         null=False,
         blank=False,
@@ -24,10 +28,20 @@ class Sluggable(models.Model):
         validators=[MinLengthValidator(3)],
     )
 
+    slug = models.SlugField(
+        null=False,
+        blank=False,
+        # Unique is false, because most inheriters will want a compound
+        # uniqueness constraint.
+        unique=False,
+        max_length=256,
+        validators=[MinLengthValidator(3), validate_not_reserved],
+    )
+
     class Meta:
         abstract = True
 
-class World(Sluggable):
+class World(Timestamped, Slugged, ArticleBase):
     '''The top-level model for a setting, representing an entire game setting,
     including all planes, and encompassing all history.
 
@@ -35,11 +49,9 @@ class World(Sluggable):
     "multiverse".
     '''
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     description = models.TextField(null=False, blank=True, default='')
 
-    class Meta(Sluggable.Meta):
+    class Meta(Timestamped.Meta, Slugged.Meta, ArticleBase.Meta):
         constraints = [
             models.UniqueConstraint(fields=['slug'], name='unique_world_slug'),
         ]
@@ -50,7 +62,7 @@ class World(Sluggable):
     def __str__(self) -> str:
         return self.slug
 
-class Plane(Sluggable):
+class Plane(Timestamped, Slugged, ArticleBase):
     '''A single dimension, with a set of entities set in physical coordinates.
 
     This is a single physical universe.
@@ -62,7 +74,7 @@ class Plane(Sluggable):
     updated_at = models.DateTimeField(auto_now=True)
     description = models.TextField(null=False, blank=True, default='')
 
-    class Meta:
+    class Meta(Timestamped.Meta, Slugged.Meta, ArticleBase.Meta):
         constraints = [
             models.UniqueConstraint(fields=['world', 'slug'], name='unique_plane_world_slug'),
         ]
@@ -73,7 +85,7 @@ class Plane(Sluggable):
     def __str__(self) -> str:
         return self.slug
 
-class Entity(Sluggable):
+class Entity(Timestamped, Slugged, ArticleBase):
     '''Something that exists somewhere.
 
     This is for people, places, things, domains, and the like.
@@ -83,15 +95,8 @@ class Entity(Sluggable):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    wiki_article = models.ForeignKey(
-        Article,
-        blank=True,
-        null=True,
-        default=None,
-        on_delete=models.SET_NULL,
-    )
 
-    class Meta:
+    class Meta(Timestamped.Meta, Slugged.Meta, ArticleBase.Meta):
         constraints = [
             models.UniqueConstraint(fields=['world', 'slug'], name='unique_entity_world_slug'),
         ]
@@ -102,7 +107,7 @@ class Entity(Sluggable):
     def __str__(self) -> str:
         return self.slug
 
-class Event(Sluggable):
+class Event(Timestamped, Slugged, ArticleBase):
     '''Something that happens for a particular length of time at a specific location.
     '''
 
@@ -110,15 +115,8 @@ class Event(Sluggable):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    wiki_article = models.ForeignKey(
-        Article,
-        blank=True,
-        null=True,
-        default=None,
-        on_delete=models.SET_NULL,
-    )
 
-    class Meta:
+    class Meta(Timestamped.Meta, Slugged.Meta, ArticleBase.Meta):
         constraints = [
             models.UniqueConstraint(fields=['world', 'slug'], name='unique_event_world_slug'),
         ]
