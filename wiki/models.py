@@ -18,9 +18,10 @@ class Section(models.Model):
     article = models.ForeignKey(Article, blank=False, null=False, on_delete=models.CASCADE)
     text = models.TextField(blank=False, null=False, help_text='Markdown text')
 
-    # Order is ranged 0 to 1, so articles can be edited by people who can't see
-    # all the sections without completely destroying the order.
-    order = models.FloatField(help_text="Order, in range [0, 1]", blank=False, null=False, default=0.0)
+    # Order is in a range from 0 to the number of sections on the article.
+    # Clients might not be able to see all the sections, but can still do
+    # alright at preventing totally mangling an article as they edit it.
+    order = models.IntegerField(help_text="Section order in its article.", blank=False, null=False, default=0)
 
     def __str__(self):
         return self.text
@@ -55,4 +56,3 @@ class ArticleBase(models.Model):
 
     class Meta:
         abstract = True
-
