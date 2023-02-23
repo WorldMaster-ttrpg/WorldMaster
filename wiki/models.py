@@ -3,41 +3,56 @@ from django.contrib.auth import get_user_model
 from django.template.defaultfilters import slugify
 User = get_user_model()
 
-class PublishedArticlesManager(models.Manager):
-    """Queryset that returns only published articles"""
-    def get_query_set(self):
-        return super(PublishedArticlesManager, self).get_query_set().filter(is_published=True)
-
 class Article(models.Model):
-    """Represents a Wiki article"""
+    """Represents a Wiki article.
 
-    title = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=50, unique=True)
-    text = models.TextField(help_text="Formatted using ReST")
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    is_published = models.BooleanField(default=False, verbose_name="Publish?")
-    objects = models.Manager()
-    published = PublishedArticlesManager()
+    These are wholly-owned objects. An article doesn't stand on its own, it
+    is always part of something else.  It is mostly a convenience to group
+    templates and permissions, so the parent object doesn't need to worry about
+    it.
+    """
 
-    def __unicode__(self):
-        return self.title
+class Section(models.Model):
+    """Represents a part of a Wiki article"""
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
-        super(Article, self).save(*args, **kwargs)
+    article = models.ForeignKey(Article, blank=False, null=False, on_delete=models.CASCADE)
+    text = models.TextField(blank=False, null=False, help_text='Markdown text')
 
-class EditArticle(models.Model):
-    """Stores an edit session of an article"""
+    # Order is in a range from 0 to the number of sections on the article.
+    # Clients might not be able to see all the sections, but can still do
+    # alright at preventing totally mangling an article as they edit it.
+    order = models.IntegerField(help_text="Section order in its article.", blank=False, null=False, default=0)
 
-    article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    editor = models.ForeignKey(User, on_delete=models.CASCADE)
-    edited_on = models.DateTimeField(auto_now_add=True)
-    summary = models.CharField(max_length=100)
-    objects = models.Manager()
+    def __str__(self):
+        return self.text
+
+def join_deletions(*deletions: tuple[int, dict[str, int]]) -> tuple[int, dict[str, int]]:
+    '''Help join deletion return values for overriding a deletion method.
+
+    Model.delete returns the count of rows deleted, and the objects deleted per
+    type.  If you delete multiple things, it makes sense to merge these values.
+    '''
+
+    count = 0
+    per_type: dict[str, int] = {}
+    for i_count, i_per_type in deletions:
+        count += i_count
+        for type, c in i_per_type.items():
+            per_type.setdefault(type, 0)
+            per_type[type] += c
+    return count, per_type
+
+class ArticleBase(models.Model):
+    '''Mark the model as a wiki article.
+
+    Automatically deletes the wiki article on deletion via a signal.
+    '''
+    article = models.OneToOneField(
+        Article,
+        blank=False,
+        null=False,
+        on_delete=models.PROTECT,
+    )
 
     class Meta:
-        ordering = ['-edited_on']
-
-    def __unicode__(self):
-        return "%s - %s - %s" % (self.summary, self.editor, self.edited_on)
+        abstract = True

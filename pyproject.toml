@@ -21,6 +21,7 @@ dependencies = [
   'django_extensions >= 3.2.1, < 4.0.0',
   'ptpython >= 3.0.22',
   'Werkzeug >= 2.2.2, < 3.0.0',
+  'markdown >= 3.4.1, < 4',
 ]
 
 [project.urls]

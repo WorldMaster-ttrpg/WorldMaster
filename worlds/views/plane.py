@@ -4,6 +4,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpR
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import TemplateView, ListView, DetailView, View
 from django.views.decorators.http import require_http_methods
+from wiki.models import Article
 from worlds.models import World, Plane
 from worlds.forms import PlaneForm
 from copy import copy
@@ -51,6 +52,7 @@ class NewPlaneView(View):
     def post(self, request: HttpRequest, world_slug: str) -> HttpResponse:
         world = get_object_or_404(World, slug=world_slug)
         form = PlaneForm(request.POST, world=world)
+        form.instance.article = Article.objects.create()
         if form.is_valid():
             return redirect(form.save())
         else:

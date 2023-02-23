@@ -4,4 +4,6 @@
 <p>Slug: {{ plane.slug }}</p>
 <p>Description: {{ plane.description }}</p>
 
+{% include "wiki/article/_detail.html" with article=plane.article %}
+
 <p><a href="{% url 'worlds:edit-plane' plane.world.slug plane.slug %}">Edit {{ plane.name }}</a></p>

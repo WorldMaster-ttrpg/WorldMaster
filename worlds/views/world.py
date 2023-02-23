@@ -2,6 +2,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpR
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import TemplateView, ListView, DetailView, View
 from django.views.decorators.http import require_http_methods
+from wiki.models import Article
 from worlds.models import World
 from worlds.forms import WorldForm
 from copy import copy
@@ -24,6 +25,7 @@ class NewWorldView(View):
 
     def post(self, request: HttpRequest) -> HttpResponse:
         form = WorldForm(request.POST)
+        form.instance.article = Article.objects.create()
         if form.is_valid():
             world: World = form.save()
             return redirect(world)
