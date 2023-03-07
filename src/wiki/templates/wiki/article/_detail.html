@@ -1,5 +1,5 @@
 <article>
-  {% for section in article.section_set.all %}
+  {% for section in article.sections %}
   {% include "wiki/section/_detail.html" with section=section %}
   {% endfor %}
 </article>

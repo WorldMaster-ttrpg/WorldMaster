@@ -1,5 +1,8 @@
+from collections.abc import Iterable
+from typing import Any, cast
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.db.models.query import QuerySet
 from django.template.defaultfilters import slugify
 User = get_user_model()
 
@@ -12,6 +15,11 @@ class Article(models.Model):
     it.
     """
 
+    def sections(self) -> Iterable['Section']:
+        '''Get the sections for this article in order.
+        '''
+        return cast(QuerySet[Section], cast(Any, self).section_set).order_by('order')
+
 class Section(models.Model):
     """Represents a part of a Wiki article"""
 
@@ -21,10 +29,15 @@ class Section(models.Model):
     # Order is in a range from 0 to the number of sections on the article.
     # Clients might not be able to see all the sections, but can still do
     # alright at preventing totally mangling an article as they edit it.
-    order = models.IntegerField(help_text="Section order in its article.", blank=False, null=False, default=0)
+    order = models.FloatField(help_text="Section order in its article.", blank=False, null=False, default=0.0)
 
     def __str__(self):
         return self.text
+
+    class Meta:
+        indexes = [
+            models.Index(fields=('article', 'order'))
+        ]
 
 def join_deletions(*deletions: tuple[int, dict[str, int]]) -> tuple[int, dict[str, int]]:
     '''Help join deletion return values for overriding a deletion method.
