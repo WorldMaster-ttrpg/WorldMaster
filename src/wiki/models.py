@@ -20,6 +20,11 @@ class Article(models.Model):
         '''
         return cast(QuerySet[Section], cast(Any, self).section_set).order_by('order')
 
+    def body_text(self) -> str:
+        '''Get the joined text of all the sections of this article..
+        '''
+        return '\n\n'.join(section.text for section in self.sections())
+
 class Section(models.Model):
     """Represents a part of a Wiki article"""
 

@@ -1,10 +1,21 @@
-<form action="{% url 'worlds:edit-world' world.slug %}" method="post">
+{% extends "worlds/base.html" %}
+
+{% load static %}
+
+{% block scripts %}
+<script async type="module" src="{% static 'wiki/wiki.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<form action=" {% url 'worlds:edit-world' world.slug %}" method="post">
   {% csrf_token %}
   <fieldset>
-    <legend>Edit {{ world.name }}</legend>
-    <table>
-      {{ form.as_p }}
-    </table>
+    <legend>Edit {{world.name}}</legend>
+    <ul>
+      {{form.as_ul}}
+    </ul>
   </fieldset>
+  {% include "wiki/article/_edit.html" with article=world.article %}
   <input type="submit" value="Submit">
 </form>
+{% endblock %}

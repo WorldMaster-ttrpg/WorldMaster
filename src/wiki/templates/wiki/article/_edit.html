@@ -1,5 +1,17 @@
 {% load markdown %}
 
-<section>
-  {{ section.text | markdown | safe }}
-</section>
+<fieldset>
+  <legend>Wiki</legend>
+  <ul>
+    {% for section in article.sections %}
+    <li><button type="button" class="add-section">+</button></li>
+    <li>
+      <input type="hidden" name="wiki-section-id" value="{{ section.id }}">
+      <input type="hidden" name="wiki-section-order" value="{{ section.order }}">
+      <textarea name="wiki-section">{{ section.text }}</textarea>
+    </li>
+    {% endfor %}
+    <li><button type="button" class="add-section">+</button></li>
+  </ul>
+  {# Needs "button" type, otherwise it automatically gets a submit type #}
+</fieldset>
