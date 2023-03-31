@@ -41,6 +41,14 @@ function add_section(button: HTMLButtonElement) {
 
   const section = new_section_li.appendChild(document.createElement('textarea'));
   section.name = 'wiki-section'
+
+  new_section_li.appendChild(document.createTextNode("\n"));
+
+  const delete_button = new_section_li.appendChild(document.createElement('button'));
+  delete_button.type = 'button';
+  delete_button.textContent = '🗑️';
+  delete_button.classList.add('delete-section')
+  delete_button.addEventListener('click', (event) => delete_section(event.target as HTMLButtonElement));
 }
 
 /** Toggles deletion for the given section.
