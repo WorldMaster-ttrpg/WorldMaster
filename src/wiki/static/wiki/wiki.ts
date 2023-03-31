@@ -43,6 +43,22 @@ function add_section(button: HTMLButtonElement) {
   section.name = 'wiki-section'
 }
 
+/** Toggles deletion for the given section.
+ */
+function delete_section(button: HTMLButtonElement) {
+  const li = button.parentElement as HTMLLIElement;
+  const section_id = li.querySelector("[name='wiki-section-id']") as HTMLInputElement;
+  const section_order = li.querySelector("[name='wiki-section-order']") as HTMLInputElement;
+  const section = li.querySelector("[name='wiki-section']") as HTMLInputElement;
+  section_id.disabled = !section_id.disabled;
+  section_order.disabled = !section_order.disabled;
+  section.disabled = !section.disabled;
+}
+
 for (const add_section_button of document.getElementsByClassName('add-section')) {
   add_section_button.addEventListener('click', (event) => add_section(event.target as HTMLButtonElement));
+}
+
+for (const delete_section_button of document.getElementsByClassName('delete-section')) {
+  delete_section_button.addEventListener('click', (event) => delete_section(event.target as HTMLButtonElement));
 }
