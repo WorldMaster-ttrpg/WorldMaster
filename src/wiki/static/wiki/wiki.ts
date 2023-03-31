@@ -18,6 +18,7 @@ function add_section(button: HTMLButtonElement) {
   } else if (next_sibling_order !== null) {
     order = next_sibling_order - 1.0;
   }
+  // Otherwise this is the only section, and should just stay 0 in order.
 
   const new_button_li = li.cloneNode(true) as HTMLLIElement;
   li.parentElement?.insertBefore(new_button_li, li)
@@ -29,7 +30,9 @@ function add_section(button: HTMLButtonElement) {
   const section_id = new_section_li.appendChild(document.createElement('input'));
   section_id.hidden = true;
   section_id.name = 'wiki-section-id';
-  section_id.value = '-1';
+
+  // Leave the value empty to tell the server that it's creating a new section
+  section_id.value = '';
 
   const section_order = new_section_li.appendChild(document.createElement('input'));
   section_order.hidden = true;

@@ -14,10 +14,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, reverse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+
+# Convenience redirect to worlds
+def redirect_to_worlds(request: HttpRequest) -> HttpResponse:
+    return HttpResponseRedirect(reverse('worlds:worlds'))
 
 urlpatterns = [
+    path('', redirect_to_worlds),
     path('admin/', admin.site.urls),
     #path('wiki/', include('wiki.urls')),
-    path('worlds/', include('worlds.urls')),
+    path('worlds/', include('worlds.urls', namespace='worlds')),
 ]
