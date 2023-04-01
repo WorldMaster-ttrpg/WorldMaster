@@ -3,8 +3,7 @@
 # Copyright © 2022 Taylor C. Richberger
 # This code is released under the license described in the LICENSE file
 
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 from . import views
 
 app_name = 'worlds'

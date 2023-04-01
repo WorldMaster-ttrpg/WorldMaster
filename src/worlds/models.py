@@ -1,11 +1,9 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
-from django.template.defaultfilters import slugify
 from django.urls import reverse
-from typing import Protocol
 from worldmaster.validators import validate_not_reserved
-from wiki.models import Article, ArticleBase
+from wiki.models import ArticleBase
 
 User = get_user_model()
 

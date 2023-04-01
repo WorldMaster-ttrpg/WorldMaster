@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.http import HttpResponse
 from .models import Article, EditArticle
 from .forms import ArticleForm, EditForm
 

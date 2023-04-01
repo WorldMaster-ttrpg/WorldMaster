@@ -1,11 +1,5 @@
 {% extends "worlds/base.html" %}
 
-{% load static %}
-
-{% block scripts %}
-<script async type="module" src="{% static 'wiki/wiki.js' %}"></script>
-{% endblock %}
-
 {% block content %}
 <form action=" {% url 'worlds:edit-world' world.slug %}" method="post">
   {% csrf_token %}

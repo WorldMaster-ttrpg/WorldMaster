@@ -1,4 +1,12 @@
-{% load markdown %}
+{% load markdown static %}
+
+{% comment %}
+Can't figure out how to get this into a script block in an included template.
+Including it in-body should be fine, though.
+{% endcomment %}
+
+
+<script async type="module" src="{% static 'wiki/wiki.js' %}"></script>
 
 <fieldset>
   <legend>Wiki</legend>

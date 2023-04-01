@@ -1,10 +1,22 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from typing import Any, cast
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models.query import QuerySet
-from django.template.defaultfilters import slugify
+from django.http import QueryDict
+from django.shortcuts import get_object_or_404
 User = get_user_model()
+
+def _load_int(value: str) -> int | None:
+    '''Load an integer if the string is not empty, otherwise None.
+    '''
+    if value:
+        return int(value)
+    else:
+        return None
+
 
 class Article(models.Model):
     """Represents a Wiki article.
@@ -24,6 +36,36 @@ class Article(models.Model):
         '''Get the joined text of all the sections of this article..
         '''
         return '\n\n'.join(section.text for section in self.sections())
+
+    def update_sections(self, data: QueryDict):
+        '''Using a POST dictionary, update this article's sections.
+        '''
+        # Not a set or dict because None may appear multiple times
+        section_ids = tuple(map(_load_int, data.getlist('wiki-section-id')))
+
+        section_orders = map(float, data.getlist('wiki-section-order'))
+        sections = data.getlist('wiki-section')
+
+        # Get the present IDs so we can delete absent sections (which have been
+        # deleted)
+        present_ids = set(id for id in section_ids if id is not None)
+
+        section_set: QuerySet[Section] = cast(Any, self).section_set
+
+        for id, order, text in zip(section_ids, section_orders, sections):
+            section: Section
+            if id is None:
+                section = section_set.create(order=order, text=text)
+                id = cast(Any, section).id
+                present_ids.add(id)
+            else:
+                section = get_object_or_404(Section, id=id)
+                section.text = text
+                section.order = order
+                section.save()
+
+        # Delete removed sections
+        section_set.exclude(id__in=present_ids).delete()
 
 class Section(models.Model):
     """Represents a part of a Wiki article"""

@@ -10,5 +10,6 @@
 {% include "wiki/article/_detail.html" with article=world.article %}
 
 <p><a href="{% url 'worlds:edit-world' world.slug %}">Edit {{ world.name }}</a></p>
+<p><a href="{% url 'worlds:planes' world.slug %}">View planes</a></p>
 <p><a href="{% url 'worlds:new-plane' world.slug %}">Create new plane</a></p>
 {% endblock %}

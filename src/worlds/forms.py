@@ -1,7 +1,6 @@
 from django import forms
 from worlds.models import World, Plane
 from django.template.defaultfilters import slugify
-from django.utils.translation import gettext as _
 
 class SluggedForm(forms.ModelForm):
     class Meta:
