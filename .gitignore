@@ -116,3 +116,7 @@ dmypy.json
 
 # local wiki checkout
 # /wiki
+
+# Don't add raw js files.  JS files will always be the result of a compilation
+# or a vendoring in.
+*.js

@@ -6,4 +6,4 @@ class WikiConfig(AppConfig):
     name = 'wiki'
 
     def ready(self):
-        from . import signals
+        pass

@@ -1,3 +1,6 @@
+{% extends "worlds/base.html" %}
+
+{% block content %}
 <h1>This is a world named {{ world.name }}</h1>
 
 <p>Name: {{ world.name }}</p>
@@ -7,4 +10,6 @@
 {% include "wiki/article/_detail.html" with article=world.article %}
 
 <p><a href="{% url 'worlds:edit-world' world.slug %}">Edit {{ world.name }}</a></p>
+<p><a href="{% url 'worlds:planes' world.slug %}">View planes</a></p>
 <p><a href="{% url 'worlds:new-plane' world.slug %}">Create new plane</a></p>
+{% endblock %}

@@ -1,7 +1,6 @@
 from collections.abc import Iterator, Sequence, Mapping, Iterable
 from django.core.exceptions import ValidationError
-from typing import Iterable, TypeVar, cast
-from operator import mul
+from typing import TypeVar, cast
 
 T = TypeVar('T')
 
