@@ -3,6 +3,7 @@
 
 from . import * # noqa: F403
 from pathlib import Path
+from os import environ
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -13,7 +14,10 @@ DEBUG = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': PROJECT_ROOT / 'db.sqlite3',
+        'NAME': environ.get('worldmaster_db', PROJECT_ROOT / 'db.sqlite3'),
     }
 }
 
+STATICFILES_DIRS = [
+    environ.get('worldmaster_static', PROJECT_ROOT / 'static'),
+]

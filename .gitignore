@@ -120,3 +120,6 @@ dmypy.json
 # Don't add raw js files.  JS files will always be the result of a compilation
 # or a vendoring in.
 *.js
+
+# The root static directory is all compiled files
+/static/
