@@ -1,15 +1,14 @@
-{% extends "worlds/base.html" %}
+{% extends "wiki/article/detail.html" %}
 
-{% block content %}
-<h1>This is a world named {{ world.name }}</h1>
+{% block pre_wiki %}
+<h1>This is a world named {{ object.name }}</h1>
 
-<p>Name: {{ world.name }}</p>
-<p>Slug: {{ world.slug }}</p>
-<p>Description: {{ world.description }}</p>
+<p>Name: {{ object.name }}</p>
+<p>Slug: {{ object.slug }}</p>
+{% endblock %}
 
-{% include "wiki/article/_detail.html" with article=world.article %}
-
-<p><a href="{% url 'worlds:edit-world' world.slug %}">Edit {{ world.name }}</a></p>
-<p><a href="{% url 'worlds:planes' world.slug %}">View planes</a></p>
-<p><a href="{% url 'worlds:new-plane' world.slug %}">Create new plane</a></p>
+{% block post_wiki %}
+<p><a href="{% url 'worlds:edit-world' object.slug %}">Edit {{ object.name }}</a></p>
+<p><a href="{% url 'worlds:planes' object.slug %}">View planes</a></p>
+<p><a href="{% url 'worlds:new-plane' object.slug %}">Create new plane</a></p>
 {% endblock %}

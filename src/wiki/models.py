@@ -20,11 +20,6 @@ def _load_int(value: str) -> int | None:
 
 class Article(models.Model):
     """Represents a Wiki article.
-
-    These are wholly-owned objects. An article doesn't stand on its own, it
-    is always part of something else.  It is mostly a convenience to group
-    templates and permissions, so the parent object doesn't need to worry about
-    it.
     """
 
     def sections(self) -> Iterable['Section']:
@@ -85,34 +80,3 @@ class Section(models.Model):
         indexes = [
             models.Index(fields=('article', 'order'))
         ]
-
-def join_deletions(*deletions: tuple[int, dict[str, int]]) -> tuple[int, dict[str, int]]:
-    '''Help join deletion return values for overriding a deletion method.
-
-    Model.delete returns the count of rows deleted, and the objects deleted per
-    type.  If you delete multiple things, it makes sense to merge these values.
-    '''
-
-    count = 0
-    per_type: dict[str, int] = {}
-    for i_count, i_per_type in deletions:
-        count += i_count
-        for type, c in i_per_type.items():
-            per_type.setdefault(type, 0)
-            per_type[type] += c
-    return count, per_type
-
-class ArticleBase(models.Model):
-    '''Mark the model as a wiki article.
-
-    Automatically deletes the wiki article on deletion via a signal.
-    '''
-    article = models.OneToOneField(
-        Article,
-        blank=False,
-        null=False,
-        on_delete=models.PROTECT,
-    )
-
-    class Meta:
-        abstract = True

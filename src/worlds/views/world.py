@@ -26,7 +26,6 @@ class NewWorldView(View):
     def post(self, request: HttpRequest) -> HttpResponse:
         with transaction.atomic():
             form = WorldForm(request.POST)
-            form.instance.article = Article.objects.create()
             if form.is_valid():
                 world: World = form.save()
                 return redirect(world)
@@ -38,7 +37,7 @@ class EditWorldView(View):
     def get(self, request: HttpRequest, world_slug: str) -> HttpResponse:
         world: World = get_object_or_404(World, slug=world_slug)
         form = WorldForm(instance=world)
-        return HttpResponse(render(request, self.template_name, {'form': form, 'world': world}))
+        return HttpResponse(render(request, self.template_name, {'form': form, 'object': world}))
 
     def post(self, request: HttpRequest, world_slug: str) -> HttpResponse:
         with transaction.atomic():
@@ -50,9 +49,8 @@ class EditWorldView(View):
             # the attempt.
             form = WorldForm(request.POST, instance=copy(world))
             if form.is_valid():
-                article: Article = world.article
-                article.update_sections(request.POST)
+                world.update_sections(request.POST)
 
                 return redirect(form.save())
             else:
-                return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'world': world}))
+                return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'object': world}))

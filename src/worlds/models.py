@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 from django.urls import reverse
 from worldmaster.validators import validate_not_reserved
-from wiki.models import ArticleBase
+from wiki.models import Article
 
 User = get_user_model()
 
@@ -39,7 +39,7 @@ class Slugged(models.Model):
     class Meta:
         abstract = True
 
-class World(Timestamped, Slugged, ArticleBase):
+class World(Timestamped, Slugged, Article):
     '''The top-level model for a setting, representing an entire game setting,
     including all planes, and encompassing all history.
 
@@ -47,9 +47,17 @@ class World(Timestamped, Slugged, ArticleBase):
     "multiverse".
     '''
 
-    description = models.TextField(null=False, blank=True, default='')
-
-    class Meta(Timestamped.Meta, Slugged.Meta, ArticleBase.Meta):
+    # Need this, otherwise the Article.world relation conflicts with the parent
+    # relations like Plane.world and such.
+    article = models.OneToOneField(
+        Article,
+        null=False,
+        blank=False,
+        on_delete=models.CASCADE,
+        parent_link=True,
+        related_name='sub_world',
+    )
+    class Meta(Timestamped.Meta, Slugged.Meta):
         constraints = [
             models.UniqueConstraint(fields=['slug'], name='unique_world_slug'),
         ]
@@ -60,19 +68,23 @@ class World(Timestamped, Slugged, ArticleBase):
     def __str__(self) -> str:
         return self.slug
 
-class Plane(Timestamped, Slugged, ArticleBase):
+class Plane(Timestamped, Slugged, Article):
     '''A single dimension, with a set of entities set in physical coordinates.
 
     This is a single physical universe.
     '''
 
-    world = models.ForeignKey(World, null=False, blank=False, on_delete=models.CASCADE)
+    world = models.ForeignKey(
+        World,
+        null=False,
+        blank=False,
+        on_delete=models.CASCADE,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    description = models.TextField(null=False, blank=True, default='')
 
-    class Meta(Timestamped.Meta, Slugged.Meta, ArticleBase.Meta):
+    class Meta(Timestamped.Meta, Slugged.Meta):
         constraints = [
             models.UniqueConstraint(fields=['world', 'slug'], name='unique_plane_world_slug'),
         ]
@@ -83,7 +95,7 @@ class Plane(Timestamped, Slugged, ArticleBase):
     def __str__(self) -> str:
         return self.slug
 
-class Entity(Timestamped, Slugged, ArticleBase):
+class Entity(Timestamped, Slugged, Article):
     '''Something that exists somewhere.
 
     This is for people, places, things, domains, and the like.
@@ -94,7 +106,7 @@ class Entity(Timestamped, Slugged, ArticleBase):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta(Timestamped.Meta, Slugged.Meta, ArticleBase.Meta):
+    class Meta(Timestamped.Meta, Slugged.Meta):
         constraints = [
             models.UniqueConstraint(fields=['world', 'slug'], name='unique_entity_world_slug'),
         ]
@@ -105,7 +117,7 @@ class Entity(Timestamped, Slugged, ArticleBase):
     def __str__(self) -> str:
         return self.slug
 
-class Event(Timestamped, Slugged, ArticleBase):
+class Event(Timestamped, Slugged, Article):
     '''Something that happens for a particular length of time at a specific location.
     '''
 
@@ -114,7 +126,7 @@ class Event(Timestamped, Slugged, ArticleBase):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta(Timestamped.Meta, Slugged.Meta, ArticleBase.Meta):
+    class Meta(Timestamped.Meta, Slugged.Meta):
         constraints = [
             models.UniqueConstraint(fields=['world', 'slug'], name='unique_event_world_slug'),
         ]
