@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.urls]
-repository = 'https://gitlab.com/worldmaster-ttrpg/worldmaster'
+repository = 'https://codeberg.org/WorldMaster/WorldMaster'
 
 [[project.authors]]
 email = 'taywee@gmx.com'

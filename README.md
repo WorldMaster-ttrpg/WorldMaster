@@ -1,5 +1,6 @@
 # WorldMaster
 
+![License GNU-AGPLv3](static/license.svg)
 WorldMaster is a platform for managing, running, sharing, and recording online TTRPG games. 
 
 # Development
