@@ -1,15 +1,14 @@
-{% extends "worlds/base.html" %}
+{% extends "wiki/article/edit.html" %}
 
-{% block content %}
-<form action="{% url 'worlds:edit-plane' plane.world.slug plane.slug %}" method="post">
-  {% csrf_token %}
+{% block form_attrs %}
+action="{% url 'worlds:edit-plane' object.world.slug object.slug %}"
+{% endblock %}
+
+{% block pre_wiki %}
   <fieldset>
-    <legend>Edit {{ plane.name }}</legend>
+    <legend>Edit {{ object.name }}</legend>
     <ul>
       {{form.as_ul}}
     </ul>
   </fieldset>
-  {% include "wiki/article/_edit.html" with article=plane.article %}
-  <input type="submit" value="Submit">
-</form>
 {% endblock %}

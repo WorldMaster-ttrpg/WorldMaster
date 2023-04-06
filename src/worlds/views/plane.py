@@ -51,7 +51,6 @@ class NewPlaneView(View):
         with transaction.atomic():
             world = get_object_or_404(World, slug=world_slug)
             form = PlaneForm(request.POST, world=world)
-            form.instance.article = Article.objects.create()
             if form.is_valid():
                 return redirect(form.save())
             else:
@@ -62,7 +61,7 @@ class EditPlaneView(View):
     def get(self, request: HttpRequest, world_slug: str, plane_slug: str) -> HttpResponse:
         plane: Plane = get_object_or_404(Plane, world__slug=world_slug, slug=plane_slug)
         form = PlaneForm(instance=plane)
-        return HttpResponse(render(request, self.template_name, {'form': form, 'plane': plane}))
+        return HttpResponse(render(request, self.template_name, {'form': form, 'object': plane}))
 
     def post(self, request: HttpRequest, world_slug: str, plane_slug: str) -> HttpResponse:
         with transaction.atomic():
@@ -72,11 +71,12 @@ class EditPlaneView(View):
             # modified instance. If you don't do this and you try to change the
             # slug, even if it fails, the form action will be changed to match
             # the attempt.
+            # We might want to counteract this by just making the slug non-
+            # editable. This would also avoid breaking links.
             form = PlaneForm(request.POST, instance=copy(plane))
             if form.is_valid():
-                article: Article = plane.article
-                article.update_sections(request.POST)
+                plane.update_sections(request.POST)
 
                 return redirect(form.save())
             else:
-                return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'plane': plane}))
+                return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'object': plane}))
