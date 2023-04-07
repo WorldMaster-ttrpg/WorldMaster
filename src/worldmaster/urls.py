@@ -24,6 +24,6 @@ def redirect_to_worlds(request: HttpRequest) -> HttpResponse:
 urlpatterns = [
     path('', redirect_to_worlds),
     path('admin/', admin.site.urls),
-    #path('wiki/', include('wiki.urls')),
     path('worlds/', include('worlds.urls', namespace='worlds')),
+    path('accounts/', include("django.contrib.auth.urls")),
 ]
