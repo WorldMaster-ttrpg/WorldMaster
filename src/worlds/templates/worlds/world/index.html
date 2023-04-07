@@ -1,7 +1,16 @@
 <h1>Worlds</h1>
-
+{% if not user.is_anonymous %}
+<h2>Your Worlds</h2>
 <ul>
-  {% for world in world_list %}
+  {% for world in user.world_set.all %}
+  <li><a href="{% url 'worlds:world' world.slug %}">{{ world.name }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h2>All Worlds</h2>
+<ul>
+  {% for world in object_list %}
   <li><a href="{% url 'worlds:world' world.slug %}">{{ world.name }}</a></li>
   {% endfor %}
 </ul>
