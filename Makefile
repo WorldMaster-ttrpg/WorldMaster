@@ -3,7 +3,7 @@ DOCKER ?= docker
 .PHONY: all clean \
 	images development_image \
 	containers worldmaster-django worldmaster-tsc \
-	volumes worldmaster-static worldmaster-db worldmaster-venv 
+	volumes worldmaster-static worldmaster-db worldmaster-venv worldmaster-fixtures 
 
 all: containers
 
@@ -11,13 +11,16 @@ images: development_image
 
 containers: worldmaster-django worldmaster-tsc
 
-volumes: worldmaster-static worldmaster-venv worldmaster-db
+volumes: worldmaster-static worldmaster-venv worldmaster-db worldmaster-fixtures
 
 development_image:
 	$(DOCKER) image build -t worldmaster:development -f ./oci/development.Containerfile .
 
 worldmaster-static:
 	$(DOCKER) volume create --ignore worldmaster-static
+
+worldmaster-fixtures:
+	$(DOCKER) volume create --ignore worldmaster-fixtures
 
 worldmaster-venv:
 	$(DOCKER) volume create --ignore worldmaster-venv
@@ -26,7 +29,7 @@ worldmaster-db:
 	$(DOCKER) volume create --ignore worldmaster-db
 
 # Runs django manage.py django in the background
-worldmaster-django: development_image worldmaster-static worldmaster-venv worldmaster-db
+worldmaster-django: development_image worldmaster-static worldmaster-venv worldmaster-db worldmaster-fixtures
 	$(DOCKER) container run --replace --rm -d \
 		--name worldmaster-django \
 		--security-opt label=disable \
@@ -36,6 +39,7 @@ worldmaster-django: development_image worldmaster-static worldmaster-venv worldm
 		--mount type=volume,source=worldmaster-db,destination=/mnt/db \
 		--env worldmaster_db=/mnt/db/db.sqlite3 \
 		--env worldmaster_static=/mnt/static \
+		--env worldmaster_fixtures=/mnt/fixtures \
 		--publish 8000:8000 \
 		worldmaster:development \
 		/mnt/source/oci/django.sh
@@ -57,3 +61,4 @@ clean:
 	-$(DOCKER) volume rm worldmaster-static
 	-$(DOCKER) volume rm worldmaster-venv
 	-$(DOCKER) volume rm worldmaster-db
+	-$(DOCKER) volume rm worldmaster-fixtures
