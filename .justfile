@@ -12,10 +12,10 @@ image name:
 volume name:
 	"{{docker}}" volume create --ignore worldmaster-{{name}}
 
-containers: container-runserver container-tsc
+containers: runserver watchtsc
 
 # Runs django manage.py django in the background
-container-runserver: (image "development") (volume "static") (volume "venv") (volume "db")
+runserver: (image "development") (volume "static") (volume "venv") (volume "db")
 	"{{docker}}" container run --replace --rm -d \
 		--name worldmaster-django \
 		--security-opt label=disable \
@@ -31,7 +31,7 @@ container-runserver: (image "development") (volume "static") (volume "venv") (vo
 		/mnt/source/oci/django.sh
 
 # Runs watchexec on tsc files in the background
-container-tsc: (image "development") (volume "static")
+watchtsc: (image "development") (volume "static")
 	"{{docker}}" container run --replace --rm -d \
 		--name worldmaster-tsc \
 		--security-opt label=disable \
