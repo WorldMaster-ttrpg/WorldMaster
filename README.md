@@ -11,20 +11,20 @@ WorldMaster is a platform for managing, running, sharing, and recording online T
 
 The main development branch lives on [Codeberg](https://codeberg.org/WorldMaster/WorldMaster), and is the perferred location for issues and pull requests.
 
-When developing, there is an easy set of containers available.  You work with these via `make`:
+When developing, there is an easy set of containers available.  You work with these via [`just`](https://github.com/casey/just):
 
 ```sh
 # Create containers, or restart them.
-make containers
+just containers
 
 # The same as the above.
-make
+just
 
 # Destroy all volumes and containers.
-make clean
+just clean
 
-# Just restart django and run migrations
-make worldmaster-django
+# Restart django and run migrations
+just runserver
 ```
 
 All docker resources are prefixed with `worldmaster-`.
@@ -32,12 +32,18 @@ All docker resources are prefixed with `worldmaster-`.
 You can clean them with
 
 ```sh
-make clean
+just clean
 ```
 
 Which might be necessary to update dependencies.
 
-If you prefer to use podman, set your `DOCKER` environment variable to `podman`.
+`podman` is the default container runner. If you prefer to use docker, set your
+`DOCKER` environment variable to `docker`, or set the `docker` `just` variable.
+
+```sh
+DOCKER=docker just
+just docker=docker
+```
 
 When the containers are running, you can access django like usual, by going
 to `127.0.0.1:8000`.
