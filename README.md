@@ -1,10 +1,15 @@
 # WorldMaster
 
-![License GNU-AGPLv3](.repo/license.svg)
+[![License GNU-AGPLv3](.repo/license.svg)](https://codeberg.org/WorldMaster/WorldMaster/src/branch/main/LICENSE)
 
 WorldMaster is a platform for managing, running, sharing, and recording online TTRPG games. 
 
 # Development
+
+[![Documentation Wiki](.repo/wiki.svg)](https://codeberg.org/WorldMaster/WorldMaster/wiki)
+[![Codeberg Issue Tracker](.repo/issues.svg)](https://codeberg.org/WorldMaster/WorldMaster/issues)
+
+The main development branch lives on [Codeberg](https://codeberg.org/WorldMaster/WorldMaster), and is the perferred location for issues and pull requests.
 
 When developing, there is an easy set of containers available.  You work with these via `make`:
 
