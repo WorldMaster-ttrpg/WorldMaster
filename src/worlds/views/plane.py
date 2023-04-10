@@ -65,7 +65,7 @@ class EditPlaneView(View):
 
     def post(self, request: HttpRequest, world_slug: str, plane_slug: str) -> HttpResponse:
         with transaction.atomic():
-            plane: Plane = get_object_or_404(Plane, slug=plane_slug)
+            plane: Plane = get_object_or_404(Plane, world__slug=world_slug, slug=plane_slug)
 
             # Copy the object in so that the bad request page doesn't get the
             # modified instance. If you don't do this and you try to change the
