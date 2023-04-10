@@ -41,6 +41,25 @@ watchtsc: (image "development") (volume "static")
 		worldmaster:development \
 		/mnt/source/oci/tsc.sh
 
+# Runs django manage.py dumpdata 
+dumpdata: (image "development") (volume "static") (volume "venv") (volume "db") (volume "fixtures")
+	"{{docker}}" container run --rm \
+		--security-opt label=disable \
+		--mount type=bind,source=.,destination=/mnt/source,ro=true \
+		--mount type=volume,source=worldmaster-venv,destination=/mnt/venv \
+		--mount type=volume,source=worldmaster-db,destination=/mnt/db \
+		--mount type=volume,source=worldmaster-fixtures,destination=/mnt/fixtures \
+		--env worldmaster_db=/mnt/db/db.sqlite3 \
+		--env worldmaster_fixtures=/mnt/fixtures \
+		worldmaster:development \
+		/mnt/source/oci/dumpdata.sh
+
+	mkdir -p fixtures
+
+	"{{docker}}" volume export worldmaster-fixtures | tar -C fixtures -xv
+
+	"{{docker}}" volume rm worldmaster-fixtures
+
 clean:
 	-"{{docker}}" container stop worldmaster-tsc
 	-"{{docker}}" container stop worldmaster-django
