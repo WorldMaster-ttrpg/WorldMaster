@@ -37,19 +37,10 @@ development *args='': (image "development") (volume "static") (volume "venv") (v
 	parser.add_argument('args', nargs='*')
 	args = parser.parse_args()
 
-	docker = environ['DOCKER']
-
-	cmd = [docker, 'container', 'run', '--rm', '--security-opt', 'label=disable']
-
-	if args.background:
-		cmd += ['-d']
-	else:
-		cmd += ['-it']
-
-	if args.name is not None:
-		cmd += ['--replace', '--name', args.name]
-
-	cmd += [
+	cmd = [
+		environ.get('DOCKER', 'podman'), 'container', 'run', '--rm',
+		'--security-opt', 'label=disable',
+		'-d' if args.background else '-it',
 		'--env', 'worldmaster_db=/mnt/db/db.sqlite3',
 		'--env', 'worldmaster_static=/mnt/static',
 		'--env', 'worldmaster_fixtures=/mnt/fixtures',
@@ -62,16 +53,16 @@ development *args='': (image "development") (volume "static") (volume "venv") (v
 			spec += ',ro=true'
 		cmd += ['--mount', spec]
 
+	if args.name is not None:
+		cmd += ['--replace', '--name', args.name]
+
 	if args.port is not None:
 		cmd += ['--publish', f'{args.port}:{args.port}']
 
 	cmd += [
 		'worldmaster:development',
 		args.entrypoint,
-	]
-
-	if args.args:
-		cmd += args.args
+	] + args.args
 
 	print(f'executing {quote(join(cmd))}')
 	execvp(cmd[0], cmd)
