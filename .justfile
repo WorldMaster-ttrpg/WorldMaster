@@ -71,7 +71,7 @@ development *args='': (image "development") (volume "static") (volume "venv") (v
 shell: (development 'shell_plus')
 
 # Runs django `manage.py runserver` in the background
-runserver: (development '-bp8080' '-nworldmaster-django' 'shell_plus')
+runserver: (development '-bp8000' '-nworldmaster-django' 'shell_plus')
 
 # This technically mounts more things than need to be mounted, because the tsc
 # watcher doesn't need the db or anything.  We'll deal with that for now.
