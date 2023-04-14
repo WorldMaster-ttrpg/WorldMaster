@@ -77,7 +77,7 @@ runserver: (development '-bp8080' '-nworldmaster-django' 'shell_plus')
 # watcher doesn't need the db or anything.  We'll deal with that for now.
 
 # Runs watchexec on tsc files in the background.
-watchtsc: (development '-nbworldmaster-tsc' '-e/mnt/source/oci/tsc.sh' '-wstatic')
+watchtsc: (development '-bnworldmaster-tsc' '-e/mnt/source/oci/tsc.sh' '-wstatic')
 
 # Runs django manage.py dumpdata 
 dumpdata: (development '-e/mnt/source/oci/dumpdata.sh' '-wfixtures')
