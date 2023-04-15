@@ -29,7 +29,7 @@ development *args='': (image "development") (volume "static") (volume "venv") (v
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--port', '-p', type=int)
+	parser.add_argument('--port', '-p', type=lambda value: tuple(map(int, value.split(':'))))
 	parser.add_argument('--background', '-b', action='store_true')
 	parser.add_argument('--name', '-n')
 	parser.add_argument('--entrypoint', '-e', default='/mnt/source/oci/django.sh')
@@ -56,8 +56,14 @@ development *args='': (image "development") (volume "static") (volume "venv") (v
 	if args.name is not None:
 		cmd += ['--replace', '--name', args.name]
 
-	if args.port is not None:
-		cmd += ['--publish', f'{args.port}:{args.port}']
+	port = args.port
+	if port:
+		cmd.append('--publish')
+
+		if len(port) == 1:
+			port *= 2
+
+		cmd.append(':'.join(map(str, port)))
 
 	cmd += [
 		'worldmaster:development',

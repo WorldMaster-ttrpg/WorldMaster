@@ -30,6 +30,9 @@ VOLUME /mnt/source /mnt/venv /mnt/db /mnt/fixtures
 
 WORKDIR /mnt/source
 
+# Note: We always run development boxes as root.  This is because root in the container, by default, maps to the user outside the container.
+# This can give the container the right to write into the source directory.
+
 ENV PYTHONUNBUFFERED=1
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
