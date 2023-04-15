@@ -18,8 +18,9 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'worlds.apps.WorldsConfig',
     'wiki.apps.WikiConfig',
-
+    'roles.apps.RolesConfig',
     'worldmaster.apps.WorldmasterConfig',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -60,8 +61,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'worldmaster.wsgi.application'
 
 AUTH_USER_MODEL = 'worldmaster.User'
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
