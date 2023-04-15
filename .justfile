@@ -110,7 +110,7 @@ createuser username password='': (
 from worldmaster.models import User
 from getpass import getpass
 from os import environ
-username = environ["username"],
+username = environ["username"]
 User.objects.create_user(
 	username = username,
 	password = environ.get("password") or getpass(),
