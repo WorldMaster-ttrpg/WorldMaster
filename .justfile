@@ -108,7 +108,7 @@ dumpdata: (development '-E/mnt/source/oci/dumpdata.sh' '-wfixtures')
 clean:
 	-"{{DOCKER}}" container stop worldmaster-tsc
 	-"{{DOCKER}}" container stop worldmaster-django
-	-"{{DOCKER}}" volume rm worldmaster-static
-	-"{{DOCKER}}" volume rm worldmaster-venv
-	-"{{DOCKER}}" volume rm worldmaster-db
-	-"{{DOCKER}}" volume rm worldmaster-fixtures
+	-"{{DOCKER}}" volume rm -f worldmaster-static
+	-"{{DOCKER}}" volume rm -f worldmaster-venv
+	-"{{DOCKER}}" volume rm -f worldmaster-db
+	-"{{DOCKER}}" volume rm -f worldmaster-fixtures
