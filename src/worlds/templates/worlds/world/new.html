@@ -1,3 +1,6 @@
+{% extends "worlds/base.html" %}
+
+{% block content %}
 <form action="{% url 'worlds:new-world' %}" method="post">
   {% csrf_token %}
   <fieldset>
@@ -8,3 +11,4 @@
   </fieldset>
   <input type="submit" value="Submit">
 </form>
+{% endblock %}

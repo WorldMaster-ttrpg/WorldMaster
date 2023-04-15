@@ -1,3 +1,6 @@
+{% extends "worlds/base.html" %}
+
+{% block content %}
 <h1>Worlds</h1>
 {% if not user.is_anonymous %}
 <h2>Your Worlds</h2>
@@ -16,3 +19,4 @@
 </ul>
 
 <a href="{% url 'worlds:new-world' %}">Create a new world</a>
+{% endblock %}
