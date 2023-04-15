@@ -83,7 +83,7 @@ development *args='': (image "development") (volume "static") (volume "venv") (v
 shell: (development 'shell_plus')
 
 # Runs django `manage.py runserver` in the background
-runserver: (development '-p8000' '-nworldmaster-django' 'runserver' '0.0.0.0:8000')
+runserver: (development '-bp8000' '-nworldmaster-django' 'runserver' '0.0.0.0:8000')
 
 # Runs django `manage.py makemigrations`
 makemigrations: (development '-wsource' 'makemigrations')
