@@ -89,7 +89,35 @@ runserver: (development '-bp8000' '-nworldmaster-django' 'runserver' '0.0.0.0:80
 makemigrations: (development '-wsource' 'makemigrations')
 
 # Creates a dev:dev superuser
-createsuperuser: (development '-wsource' '-a-eDJANGO_SUPERUSER_PASSWORD=dev' '--' 'createsuperuser' '--username' 'dev' '--email' 'dev@worldmaster.test' '--noinput')
+createsuperuser: (
+	development
+	'-wsource'
+	'-a-eDJANGO_SUPERUSER_PASSWORD=dev'
+	'--' 'createsuperuser'
+	'--username' 'dev'
+	'--email' 'dev@worldmaster.test'
+	'--noinput'
+)
+
+# Creates a dev:dev superuser
+createuser username password='': (
+	development
+	'-wsource'
+	('-a-eusername=' + username)
+	("-a-epassword=" + password)
+	'--' 'shell'
+	'-c' '''
+from worldmaster.models import User
+from getpass import getpass
+from os import environ
+username = environ["username"],
+User.objects.create_user(
+	username = username,
+	password = environ.get("password") or getpass(),
+	email = f"{username}@worldmaster.test",
+)
+'''
+)
 
 # This technically mounts more things than need to be mounted, because the tsc
 # watcher doesn't need the db or anything.  We'll live with that for now.
