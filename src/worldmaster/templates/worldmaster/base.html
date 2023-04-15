@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>{% block title %}WorldMaster{% endblock %}</title>
+  {% block scripts %}{% endblock %}
+</head>
+
+<body>
+  <div>
+  {% if user.is_anonymous %}
+    <a href="{% url 'login' %}">login</a>
+  {% else %}
+    <p>Logged in as {{user.username}}. <a href="{% url 'logout' %}">logout</a></p>
+  {% endif %}
+  </div>
+  <nav>
+    <ul>
+      <li><a href="{% url 'worlds:worlds' %}">Worlds</a></li>
+    </ul>
+  </nav>
+  <div id="content">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+
+</html>

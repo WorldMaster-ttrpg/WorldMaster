@@ -44,7 +44,7 @@ class World(Timestamped, Slugged, Article):
     including all planes, and encompassing all history.
 
     "World" does not mean the same thing as "planet", but is closer to
-    "multiverse".
+    "universe" or "multiverse".
     '''
 
     # Need this, otherwise the Article.world relation conflicts with the parent
@@ -57,6 +57,15 @@ class World(Timestamped, Slugged, Article):
         parent_link=True,
         related_name='sub_world',
     )
+
+    master = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        default=None,
+    )
+
     class Meta(Timestamped.Meta, Slugged.Meta):
         constraints = [
             models.UniqueConstraint(fields=['slug'], name='unique_world_slug'),

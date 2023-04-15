@@ -2,6 +2,7 @@ from django.db import transaction
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import ListView, DetailView, View
+from django.contrib.auth.mixins import LoginRequiredMixin
 from wiki.models import Article
 from worlds.models import World, Plane
 from worlds.forms import PlaneForm
@@ -35,7 +36,7 @@ class PlaneView(DetailView):
     def get_queryset(self):
         return Plane.objects.filter(world=self.__world)
 
-class NewPlaneView(View):
+class NewPlaneView(LoginRequiredMixin, View):
     template_name = 'worlds/plane/new.html'
 
     def get(self, request: HttpRequest, world_slug: str) -> HttpResponse:
@@ -56,8 +57,9 @@ class NewPlaneView(View):
             else:
                 return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'world': world}))
 
-class EditPlaneView(View):
+class EditPlaneView(LoginRequiredMixin, View):
     template_name = 'worlds/plane/edit.html'
+
     def get(self, request: HttpRequest, world_slug: str, plane_slug: str) -> HttpResponse:
         plane: Plane = get_object_or_404(Plane, world__slug=world_slug, slug=plane_slug)
         form = PlaneForm(instance=plane)

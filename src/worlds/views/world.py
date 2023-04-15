@@ -1,7 +1,10 @@
+from typing import cast
+from django.contrib.auth.models import AbstractBaseUser
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import ListView, DetailView, View
 from django.db import transaction
+from django.contrib.auth.mixins import LoginRequiredMixin
 from wiki.models import Article
 from worlds.models import World
 from worlds.forms import WorldForm
@@ -17,22 +20,22 @@ class WorldView(DetailView):
 
     template_name = 'worlds/world/detail.html'
 
-class NewWorldView(View):
+class NewWorldView(LoginRequiredMixin, View):
     template_name = 'worlds/world/new.html'
     def get(self, request: HttpRequest) -> HttpResponse:
-        form = WorldForm()
+        form = WorldForm(master=cast(AbstractBaseUser, request.user))
         return HttpResponse(render(request, self.template_name, {'form': form}))
 
     def post(self, request: HttpRequest) -> HttpResponse:
         with transaction.atomic():
-            form = WorldForm(request.POST)
+            form = WorldForm(request.POST, master=cast(AbstractBaseUser, request.user))
             if form.is_valid():
                 world: World = form.save()
                 return redirect(world)
             else:
                 return HttpResponseBadRequest(render(request, self.template_name, {'form': form}))
 
-class EditWorldView(View):
+class EditWorldView(LoginRequiredMixin, View):
     template_name = 'worlds/world/edit.html'
     def get(self, request: HttpRequest, world_slug: str) -> HttpResponse:
         world: World = get_object_or_404(World, slug=world_slug)

@@ -1,3 +1,6 @@
+{% extends "worlds/base.html" %}
+
+{% block content %}
 <h1>Planes in {{ world.name }}</h1>
 
 <ul>
@@ -7,3 +10,4 @@
 </ul>
 
 <a href="{% url 'worlds:new-plane' world.slug %}">Create a new plane</a>
+{% endblock %}
