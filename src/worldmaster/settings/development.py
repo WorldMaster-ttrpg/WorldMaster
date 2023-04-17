@@ -14,7 +14,7 @@ DEBUG = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': environ.get('worldmaster_db', PROJECT_ROOT / 'db.sqlite3'),
+        'NAME': PROJECT_ROOT / 'dev' / 'db.sqlite3',
     }
 }
 

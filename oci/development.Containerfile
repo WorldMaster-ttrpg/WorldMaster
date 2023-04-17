@@ -26,7 +26,7 @@ RUN \
   apt install -y ./watchexec.deb
 # This container runs as root so that the user can read all the bind mounts
 
-VOLUME /mnt/source /mnt/venv /mnt/db /mnt/fixtures
+VOLUME /mnt/venv
 
 WORKDIR /mnt/source
 
