@@ -121,8 +121,7 @@ dmypy.json
 # or a vendoring in.
 *.js
 
-# The root static directory is all compiled files
-/static/**
-
-# Allow the empty keep file to keep the static dir
-!/static/keep
+/static/*
+!/static/.keep
+/dev/*
+!/dev/.keep

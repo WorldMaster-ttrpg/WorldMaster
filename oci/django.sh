@@ -2,11 +2,13 @@
 
 set -euvf
 
-if ! [ -e /mnt/venv/bin/activate ]; then
-  python3 -mvenv /mnt/venv
-  /mnt/venv/bin/pip install -e .
+venv=${venv:-$(mktemp -d)}
+
+if ! [ -e "${venv}/bin/activate" ]; then
+  python3 -mvenv "$venv"
+  "$venv/bin/pip" install -e .
 fi
 
-/mnt/venv/bin/python ./manage.py migrate
+"$venv/bin/python" ./manage.py migrate
 
-exec /mnt/venv/bin/python ./manage.py "$@"
+exec "$venv/bin/python" ./manage.py "$@"

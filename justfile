@@ -7,24 +7,17 @@ all: containers
 
 images: (image "development")
 
-volumes: (volume "static") (volume "fixtures") (volume "venv") (volume "db")
-
 image name:
 	"{{DOCKER}}" image build -t worldmaster:{{name}} -f ./oci/{{name}}.Containerfile .
-
-volume name:
-	"{{DOCKER}}" volume create --ignore worldmaster-{{name}}
 
 # runserver and watchtsc
 containers: runserver watchtsc
 
-# this is a pretty complex little job.  I'd like a better way of handling this.
-
 # Runs a django `manage.py {{args}}`, possibly in the background.
-development *args='': (image "development") (volume "static") (volume "venv") (volume "db")
+development *args='': (image "development")
 	#!/usr/bin/env python3
 
-	from os import environ, execvp
+	from os import environ, execvp, getuid, getgid
 	from shlex import join
 	import argparse
 
@@ -34,28 +27,38 @@ development *args='': (image "development") (volume "static") (volume "venv") (v
 	parser.add_argument('--name', '-n')
 	parser.add_argument('--entrypoint', '-E', default='/mnt/source/oci/django.sh')
 	parser.add_argument('--container-arg', '-a', action='append', default=[])
-	parser.add_argument('--writable', '-w', action='append', default=['venv', 'db'])
+	parser.add_argument('--mount', '-m', action='append', default=['static', 'fixtures'])
+	parser.add_argument('--write-mount', '-w', action='append', default=['dev'])
 	parser.add_argument('args', nargs='*')
 	args = parser.parse_args()
+
+	# Need to make sure we maintain order.
+	writable = args.write_mount
+	writable_set = frozenset(writable)
+	read_only = [i for i in args.mount if i not in writable_set]
 
 	cmd = [
 		environ.get('DOCKER', 'podman'), 'container', 'run', '--rm',
 		'--security-opt', 'label=disable',
 		'-d' if args.background else '-it',
-		'--env', 'worldmaster_db=/mnt/db/db.sqlite3',
-		'--env', 'worldmaster_static=/mnt/static',
-		'--env', 'worldmaster_fixtures=/mnt/fixtures',
+		'--userns', 'keep-id',
+		'--user', f'{getuid()}:{getgid()}',
+		'--env', 'venv=/mnt/venv',
+		'--mount', 'type=volume,source=worldmaster-venv,destination=/mnt/venv',
+		'--mount', 'type=bind,source=.,destination=/mnt/source,ro=true',
 	]
 
-	cmd += ['--mount', 'type=bind,source=.,destination=/mnt/source']
-	if 'source' not in args.writable:
-		cmd[-1] += ',ro=true'
+	for name in read_only:
+		cmd += [
+			'--mount',
+			f'type=bind,source=./{name},destination=/mnt/source/{name},ro=true',
+		]
 
-	for name in ('static', 'venv', 'db', 'fixtures'):
-		spec = f'type=volume,source=worldmaster-{name},destination=/mnt/{name}'
-		if name not in args.writable:
-			spec += ',ro=true'
-		cmd += ['--mount', spec]
+	for name in writable:
+		cmd += [
+			'--mount',
+			f'type=bind,source=./{name},destination=/mnt/source/{name},ro=false',
+		]
 
 	if args.name is not None:
 		cmd += ['--replace', '--name', args.name]
@@ -86,15 +89,23 @@ shell: (development 'shell_plus')
 runserver: (development '-bp8000' '-nworldmaster-django' 'runserver' '0.0.0.0:8000')
 
 # Runs django `manage.py makemigrations`
-makemigrations: (development '-wsource' 'makemigrations')
+makemigrations: (
+	development
+	'-w' 'src/roles/migrations'
+	'-w' 'src/wiki/migrations'
+	'-w' 'src/worldmaster/migrations'
+	'-w' 'src/worlds/migrations'
+	'makemigrations'
+)
+
 
 # Creates a dev:dev superuser
-createsuperuser: (
+createsuperuser username='dev' password='dev': (
 	development
 	'-wsource'
-	'-a-eDJANGO_SUPERUSER_PASSWORD=dev'
+	('-a-eDJANGO_SUPERUSER_PASSWORD=' + password)
 	'--' 'createsuperuser'
-	'--username' 'dev'
+	'--username' username
 	'--email' 'dev@worldmaster.test'
 	'--noinput'
 )
@@ -127,12 +138,7 @@ watchtsc: (development '-bnworldmaster-tsc' '-E/mnt/source/oci/tsc.sh' '-wstatic
 
 # Runs django manage.py dumpdata 
 dumpdata: (development '-E/mnt/source/oci/dumpdata.sh' '-wfixtures')
-	mkdir -p fixtures
-
-	"{{DOCKER}}" volume export worldmaster-fixtures | tar -C fixtures -xv
-
-	"{{DOCKER}}" volume rm worldmaster-fixtures
 
 clean:
 	-"{{DOCKER}}" container stop -i worldmaster-tsc worldmaster-django
-	-"{{DOCKER}}" volume rm -f worldmaster-static worldmaster-venv worldmaster-db worldmaster-fixtures
+	-"{{DOCKER}}" volume rm -f worldmaster-venv
