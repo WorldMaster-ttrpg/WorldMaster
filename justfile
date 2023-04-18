@@ -44,7 +44,9 @@ development *args='': (image "development")
 		'--userns', 'keep-id',
 		'--user', f'{getuid()}:{getgid()}',
 		'--env', 'venv=/mnt/venv',
+		'--env', 'HOME=/mnt/home',
 		'--mount', 'type=volume,source=worldmaster-venv,destination=/mnt/venv',
+		'--mount', 'type=volume,source=worldmaster-home,destination=/mnt/home',
 		'--mount', 'type=bind,source=.,destination=/mnt/source,ro=true',
 	]
 
@@ -102,7 +104,6 @@ makemigrations: (
 # Creates a dev:dev superuser
 createsuperuser username='dev' password='dev': (
 	development
-	'-wsource'
 	('-a-eDJANGO_SUPERUSER_PASSWORD=' + password)
 	'--' 'createsuperuser'
 	'--username' username
@@ -113,7 +114,6 @@ createsuperuser username='dev' password='dev': (
 # Creates a dev:dev superuser
 createuser username password='': (
 	development
-	'-wsource'
 	('-a-eusername=' + username)
 	("-a-epassword=" + password)
 	'--' 'shell'
@@ -141,4 +141,4 @@ dumpdata: (development '-E/mnt/source/oci/dumpdata.sh' '-wfixtures')
 
 clean:
 	-"{{DOCKER}}" container stop -i worldmaster-tsc worldmaster-django
-	-"{{DOCKER}}" volume rm -f worldmaster-venv
+	-"{{DOCKER}}" volume rm -f worldmaster-venv worldmaster-home
