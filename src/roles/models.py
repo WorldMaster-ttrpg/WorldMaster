@@ -19,6 +19,7 @@ class RoleTarget(models.Model):
     All models that want to have roles applied and checked on them should
     reference this.
     '''
+
     parent = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
@@ -28,8 +29,11 @@ class RoleTarget(models.Model):
         default=None,
     )
 
-    def user_is_master(self, user: worldmaster.User):
-        # Don't even try to check for anonymous masters.
+    def user_is_master(self, user: worldmaster.User) -> bool:
+        # Superuser is always all roles
+        if user.is_superuser:
+            return True
+
         if user.is_authenticated:
             if Role.objects.filter(
                 user=user,
@@ -37,45 +41,50 @@ class RoleTarget(models.Model):
                 target=self,
             ).exists():
                 return True
-
-            if (parent := self.parent) is not None:
-                return parent.user_is_master(user)
         else:
+            # We do not allow anonymous masters.  We should probably hard-
+            # disallow anonymous editor or player as well.
             return False
+
+        parent: RoleTarget | None = self.parent
+        if parent is not None:
+            return parent.user_is_master(user)
+
+        return False
+
+    def _user_is_role(self, user: worldmaster.User, type: Role.Type) -> bool:
+        # Superuser is always all roles
+        if user.is_superuser:
+            return True
+
+        if user.is_authenticated:
+            query = models.Q(
+                models.Q(user=None) | models.Q(user=user),
+                type=type,
+                target=self,
+            )
+        else:
+            query = models.Q(
+                user=None,
+                type=type,
+                target=self,
+            )
+
+        if Role.objects.filter(query).exists():
+            return True
+
+        # Master of this or any parent is also all roles
+        return self.user_is_master(user)
 
     def user_can_edit(self, user: worldmaster.User):
         '''If the user has EDITOR or MASTER on the target or MASTER on any ancestor.
         '''
-        if user.is_authenticated:
-            query = models.Q(
-                models.Q(user=None) | models.Q(user=user),
-                type=Role.Type.EDITOR,
-                target=self,
-            )
-        else:
-            query = models.Q(
-                user=None,
-                type=Role.Type.EDITOR,
-                target=self,
-            )
-        return Role.objects.filter(query).exists() or self.user_is_master(user)
+        return self._user_is_role(user, Role.Type.EDITOR)
 
     def user_can_view(self, user: worldmaster.User):
         '''If the user has VIEWER or MASTER on the target or MASTER on any ancestor.
         '''
-        if user.is_authenticated:
-            query = models.Q(
-                models.Q(user=None) | models.Q(user=user),
-                type=Role.Type.VIEWER,
-                target=self,
-            )
-        else:
-            query = models.Q(
-                user=None,
-                type=Role.Type.VIEWER,
-                target=self,
-            )
-        return Role.objects.filter(query).exists() or self.user_is_master(user)
+        return self._user_is_role(user, Role.Type.VIEWER)
 
 class Role(models.Model):
     '''A role, giving a user specific privileges on a specific target.
