@@ -58,19 +58,17 @@ class RoleTarget(models.Model):
         return False
 
     def user_is_master(self, user: AbstractUser | AnonymousUser) -> bool:
-        '''Returns True if the user has the MASTER role on this or any ancestor.
-
-        The MASTER role is the only one that should check ancestors.
+        '''Returns True if the user has the MASTER role on this.
         '''
         return self.user_is_role(user, Role.Type.MASTER)
 
     def user_is_editor(self, user: AbstractUser | AnonymousUser):
-        '''If the user has EDITOR or MASTER on the target or MASTER on any ancestor.
+        '''If the user has EDITOR on this.
         '''
         return self.user_is_role(user, Role.Type.EDITOR)
 
     def user_is_viewer(self, user: AbstractUser | AnonymousUser):
-        '''If the user has VIEWER or MASTER on the target or MASTER on any ancestor.
+        '''If the user has VIEWER on this.
         '''
         return self.user_is_role(user, Role.Type.VIEWER)
 
@@ -100,16 +98,16 @@ class Role(models.Model):
 
     # A map from a Role type to all the Role types that it auto-grants.
     # Types don't include themselves.
+    # A signal automatically grants the sub-roles.
     _AUTO_GRANT: Mapping[Type, frozenset[Type]] = {
         Type.MASTER: frozenset((Type.EDITOR, Type.VIEWER)),
         Type.EDITOR: frozenset((Type.VIEWER,)),
         Type.VIEWER: frozenset(),
     }
 
-    # Roles that apply recursively
+    # Roles that apply recursively.  A signal takes care of actually applying these.
     _RECURSIVE: frozenset[Type] = frozenset((Type.MASTER,))
 
-    # TODO: Use constraints to forbid anonymous EDITOR and MASTER roles
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
