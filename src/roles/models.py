@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from collections.abc import Mapping
+from typing import TypeVar
 
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, AnonymousUser
@@ -137,6 +139,9 @@ class Role(models.Model):
 
     __repr__ = __str__
 
+
+Subclass = TypeVar('Subclass', bound='RoleTargetBase')
+
 class RoleTargetBase(models.Model):
     '''An abstract base that gives a role_target field to a model.
     '''
@@ -151,3 +156,18 @@ class RoleTargetBase(models.Model):
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def visible_to(cls: type[Subclass], user: AbstractUser | AnonymousUser) -> models.QuerySet[Subclass]:
+        if user.is_superuser:
+            return cls.objects.all()
+        elif user.is_anonymous:
+            return cls.objects.filter(
+                role_target__roles__type=Role.Type.VIEWER,
+                role_target__roles__user=None,
+            )
+        else:
+            return cls.objects.filter(
+                models.Q(role_target__roles__user=None) | models.Q(role_target__roles__user=user),
+                role_target__roles__type=Role.Type.VIEWER,
+            )
