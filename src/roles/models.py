@@ -1,12 +1,10 @@
 from __future__ import annotations
+from collections.abc import Mapping
 
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import AbstractUser
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.db import models
 from django.contrib.auth import get_user_model
-from worldmaster import models as worldmaster
 
 User = get_user_model()
 
@@ -27,42 +25,26 @@ class RoleTarget(models.Model):
         blank=True,
         null=True,
         default=None,
+        related_name='children',
     )
 
-    def user_is_master(self, user: worldmaster.User) -> bool:
+    def user_is_role(self, user: AbstractUser | AnonymousUser, type: Role.Type) -> bool:
+        '''Return True if the user counts as this role.
+        
+        This is true if this user or the NULL user has the role on this target,
+        or if the user is a superuser.
+        '''
         # Superuser is always all roles
         if user.is_superuser:
             return True
 
-        if user.is_authenticated:
-            if Role.objects.filter(
-                user=user,
-                type=Role.Type.MASTER,
-                target=self,
-            ).exists():
-                return True
-        else:
-            # We do not allow anonymous masters.  We should probably hard-
-            # disallow anonymous editor or player as well.
-            return False
-
-        parent: RoleTarget | None = self.parent
-        if parent is not None:
-            return parent.user_is_master(user)
-
-        return False
-
-    def _user_is_role(self, user: worldmaster.User, type: Role.Type) -> bool:
-        # Superuser is always all roles
-        if user.is_superuser:
-            return True
-
-        if user.is_authenticated:
+        elif user.is_authenticated:
             query = models.Q(
                 models.Q(user=None) | models.Q(user=user),
                 type=type,
                 target=self,
             )
+
         else:
             query = models.Q(
                 user=None,
@@ -73,18 +55,22 @@ class RoleTarget(models.Model):
         if Role.objects.filter(query).exists():
             return True
 
-        # Master of this or any parent is also all roles
-        return self.user_is_master(user)
+        return False
 
-    def user_can_edit(self, user: worldmaster.User):
-        '''If the user has EDITOR or MASTER on the target or MASTER on any ancestor.
+    def user_is_master(self, user: AbstractUser | AnonymousUser) -> bool:
+        '''Returns True if the user has the MASTER role on this.
         '''
-        return self._user_is_role(user, Role.Type.EDITOR)
+        return self.user_is_role(user, Role.Type.MASTER)
 
-    def user_can_view(self, user: worldmaster.User):
-        '''If the user has VIEWER or MASTER on the target or MASTER on any ancestor.
+    def user_is_editor(self, user: AbstractUser | AnonymousUser):
+        '''If the user has EDITOR on this.
         '''
-        return self._user_is_role(user, Role.Type.VIEWER)
+        return self.user_is_role(user, Role.Type.EDITOR)
+
+    def user_is_viewer(self, user: AbstractUser | AnonymousUser):
+        '''If the user has VIEWER on this.
+        '''
+        return self.user_is_role(user, Role.Type.VIEWER)
 
 class Role(models.Model):
     '''A role, giving a user specific privileges on a specific target.
@@ -110,13 +96,25 @@ class Role(models.Model):
         # Simply allows seeing some object.
         VIEWER = 'viewer', _('Viewer')
 
-    # TODO: Use constraints to forbid anonymous EDITOR and MASTER roles
+    # A map from a Role type to all the Role types that it auto-grants.
+    # Types don't include themselves.
+    # A signal automatically grants the sub-roles.
+    _AUTO_GRANT: Mapping[Type, frozenset[Type]] = {
+        Type.MASTER: frozenset((Type.EDITOR, Type.VIEWER)),
+        Type.EDITOR: frozenset((Type.VIEWER,)),
+        Type.VIEWER: frozenset(),
+    }
+
+    # Roles that apply recursively.  A signal takes care of actually applying these.
+    _RECURSIVE: frozenset[Type] = frozenset((Type.MASTER,))
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         help_text='The user with this role.  If NULL, allows anonymous access to the role.',
         blank=True,
         null=True,
+        related_name='roles',
     )
     type = models.SlugField(
         max_length=16,
@@ -131,6 +129,7 @@ class Role(models.Model):
         help_text='The target for this role',
         blank=False,
         null=False,
+        related_name='roles',
     )
 
     def __str__(self) -> str:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import cast
+from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.exceptions import PermissionDenied
 
 from django.db import transaction
@@ -22,7 +23,11 @@ class PlanesView(ListView):
         self.__world = get_object_or_404(World, slug=world_slug)
 
     def get_queryset(self):
-        return Plane.objects.filter(world=self.__world)
+        '''Get planes in this world visible to this user.
+        '''
+        return Plane.visible_to(
+            cast(AbstractUser | AnonymousUser, self.request.user)
+        ).filter(world=self.__world)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data()
@@ -39,7 +44,11 @@ class PlaneView(DetailView):
         self.__world = get_object_or_404(World, slug=world_slug)
 
     def get_queryset(self):
-        return Plane.objects.filter(world=self.__world)
+        '''Get planes in this world visible to this user.
+        '''
+        return Plane.visible_to(
+            cast(AbstractUser | AnonymousUser, self.request.user)
+        ).filter(world=self.__world)
 
 class NewPlaneView(LoginRequiredMixin, View):
     template_name = 'worlds/plane/new.html'
@@ -48,7 +57,7 @@ class NewPlaneView(LoginRequiredMixin, View):
         with transaction.atomic():
             world = get_object_or_404(World, slug=world_slug)
             user = cast(worldmaster.User, request.user)
-            if not world.role_target.user_can_edit(user):
+            if not world.role_target.user_is_editor(user):
                 raise PermissionDenied('User can not edit world')
             form = PlaneForm(world=world)
             context = {
@@ -61,7 +70,7 @@ class NewPlaneView(LoginRequiredMixin, View):
         with transaction.atomic():
             world = get_object_or_404(World, slug=world_slug)
             user = cast(worldmaster.User, request.user)
-            if not world.role_target.user_can_edit(user):
+            if not world.role_target.user_is_editor(user):
                 raise PermissionDenied('User can not edit world')
             form = PlaneForm(request.POST, world=world)
             if form.is_valid():
@@ -84,7 +93,7 @@ class EditPlaneView(LoginRequiredMixin, View):
         with transaction.atomic():
             plane: Plane = get_object_or_404(Plane, world__slug=world_slug, slug=plane_slug)
             user = cast(worldmaster.User, request.user)
-            if not plane.role_target.user_can_edit(user):
+            if not plane.role_target.user_is_editor(user):
                 raise PermissionDenied('User can not edit plane')
             form = PlaneForm(instance=plane)
             return HttpResponse(render(request, self.template_name, {'form': form, 'object': plane}))
@@ -93,7 +102,7 @@ class EditPlaneView(LoginRequiredMixin, View):
         with transaction.atomic():
             plane: Plane = get_object_or_404(Plane, world__slug=world_slug, slug=plane_slug)
             user = cast(worldmaster.User, request.user)
-            if not plane.role_target.user_can_edit(user):
+            if not plane.role_target.user_is_editor(user):
                 raise PermissionDenied('User can not edit plane')
 
             # Copy the object in so that the bad request page doesn't get the

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import Any, cast
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models.query import QuerySet
 from django.http import QueryDict
 from django.shortcuts import get_object_or_404
-from worldmaster.models import User
-from roles.models import Role, RoleTarget, RoleTargetBase
+from roles.models import Role, RoleTargetBase
+
+User = get_user_model()
 
 def _load_int(value: str) -> int | None:
     '''Load an integer if the string is not empty, otherwise None.
@@ -32,11 +35,11 @@ class Article(RoleTargetBase, models.Model):
         '''
         return '\n\n'.join(section.text for section in self.sections())
 
-    def update_sections(self, user: User, data: QueryDict):
+    def update_sections(self, user: AbstractUser | AnonymousUser, data: QueryDict):
         '''Using a POST dictionary, update this article's sections.
         '''
 
-        if not self.role_target.user_can_edit(user):
+        if not self.role_target.user_is_editor(user):
             raise PermissionDenied('User can not edit wiki')
 
         # Not a set or dict because None may appear multiple times
@@ -69,14 +72,14 @@ class Article(RoleTargetBase, models.Model):
                 present_ids.add(id)
             else:
                 section = get_object_or_404(Section, id=id)
-                if section.role_target.user_can_edit(user):
+                if section.role_target.user_is_editor(user):
                     section.text = text
                     section.order = order
                     section.save()
 
         # Delete removed sections, if the user can delete them.
         for section in section_set.exclude(id__in=present_ids):
-            if section.role_target.user_can_edit(user):
+            if section.role_target.user_is_editor(user):
                 section.delete()
 
 class Section(RoleTargetBase, models.Model):

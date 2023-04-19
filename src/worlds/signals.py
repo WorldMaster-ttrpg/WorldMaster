@@ -3,8 +3,8 @@ from django.db import models
 from django.db.models.signals import pre_save, post_delete
 from django.dispatch import receiver
 from .models import World, Plane, Entity, Event
-from wiki.models import Article, Section, ArticleBase
-from roles.models import RoleTarget, RoleTargetBase
+from wiki.models import Article
+from roles.models import RoleTarget
 
 @receiver(pre_save, sender=World)
 def add_world_article_and_share_role_target(
