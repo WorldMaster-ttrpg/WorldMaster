@@ -71,21 +71,6 @@ class World(
     def __str__(self) -> str:
         return self.slug
 
-    @staticmethod
-    def visible_to(user: AbstractUser | AnonymousUser) -> models.QuerySet[World]:
-        if user.is_superuser:
-            return World.objects.all()
-        elif user.is_anonymous:
-            return World.objects.filter(
-                role_target__roles__type=Role.Type.VIEWER,
-                role_target__roles__user=None,
-            )
-        else:
-            return World.objects.filter(
-                models.Q(role_target__roles__user=None) | models.Q(role_target__roles__user=user),
-                role_target__roles__type=Role.Type.VIEWER,
-            )
-
 class WorldChild(models.Model):
     '''A model that's the child of a world
     '''
@@ -128,21 +113,6 @@ class Plane(
 
     def __str__(self) -> str:
         return self.slug
-
-    @staticmethod
-    def visible_to(user: AbstractUser | AnonymousUser) -> models.QuerySet[Plane]:
-        if user.is_superuser:
-            return Plane.objects.all()
-        elif user.is_anonymous:
-            return Plane.objects.filter(
-                role_target__roles__type=Role.Type.VIEWER,
-                role_target__roles__user=None,
-            )
-        else:
-            return Plane.objects.filter(
-                models.Q(role_target__roles__user=None) | models.Q(role_target__roles__user=user),
-                role_target__roles__type=Role.Type.VIEWER,
-            )
 
 class Entity(
     WorldChild,
