@@ -6,4 +6,4 @@ class WorldsConfig(AppConfig):
     name = 'worlds'
 
     def ready(self):
-        from . import signals
+        from . import signals # noqa

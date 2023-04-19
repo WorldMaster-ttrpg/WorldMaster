@@ -1,5 +1,7 @@
 from typing import cast
+from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.exceptions import PermissionDenied
+from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import ListView, DetailView, View
@@ -7,7 +9,6 @@ from django.db import transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
 from worlds.models import World
 from worlds.forms import WorldForm
-from worldmaster.models import User
 from roles.models import Role
 from copy import copy
 
@@ -15,11 +16,20 @@ class WorldsView(ListView):
     model = World
     template_name = 'worlds/world/index.html'
 
+    def get_queryset(self) -> QuerySet[World]:
+        '''Get the visible worlds for the given user.
+        '''
+        return World.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
+
 class WorldView(DetailView):
     model = World
     slug_url_kwarg = 'world_slug'
-
     template_name = 'worlds/world/detail.html'
+
+    def get_queryset(self) -> QuerySet[World]:
+        '''Get the visible worlds for the given user.
+        '''
+        return World.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
 
 class NewWorldView(LoginRequiredMixin, View):
     template_name = 'worlds/world/new.html'
@@ -44,18 +54,18 @@ class NewWorldView(LoginRequiredMixin, View):
 class EditWorldView(LoginRequiredMixin, View):
     template_name = 'worlds/world/edit.html'
     def get(self, request: HttpRequest, world_slug: str) -> HttpResponse:
-        user = cast(User, request.user)
+        user = cast(AbstractUser | AnonymousUser, request.user)
         world: World = get_object_or_404(World, slug=world_slug)
-        if not world.role_target.user_can_edit(user):
+        if not world.role_target.user_is_editor(user):
             raise PermissionDenied('User can not edit world')
         form = WorldForm(instance=world)
         return HttpResponse(render(request, self.template_name, {'form': form, 'object': world}))
 
     def post(self, request: HttpRequest, world_slug: str) -> HttpResponse:
         with transaction.atomic():
-            user = cast(User, request.user)
+            user = cast(AbstractUser | AnonymousUser, request.user)
             world: World = get_object_or_404(World, slug=world_slug)
-            if not world.role_target.user_can_edit(user):
+            if not world.role_target.user_is_editor(user):
                 raise PermissionDenied('User can not edit world')
 
             # Copy the object in so that the bad request page doesn't get the

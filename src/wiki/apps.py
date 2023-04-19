@@ -5,4 +5,4 @@ class WikiConfig(AppConfig):
     name = 'wiki'
 
     def ready(self):
-        from . import signals
+        from . import signals # noqa
