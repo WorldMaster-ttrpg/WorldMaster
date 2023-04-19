@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 from django.urls import reverse
 from worldmaster.validators import validate_not_reserved
 from wiki.models import ArticleBase
-from roles.models import Role, RoleTargetBase
+from roles.models import RoleTargetBase
 
 User = get_user_model()
 
