@@ -48,8 +48,6 @@ just docker=docker
 When the containers are running, you can access django like usual, by going
 to `127.0.0.1:8000`.
 
-## Notes
-
 * You should not use `localhost`, because if that resolves to an IPv6 address,
   it will fail to resolve. [We can only listen on ipv4 or ipv6, not both at the
   same time](https://code.djangoproject.com/ticket/24864)).
@@ -63,3 +61,6 @@ to `127.0.0.1:8000`.
 
 * Containers are started with `--rm`.  Their persistent state is kept in
   volumes, not the container filesystem.
+
+* You can rebuild images with `just images`.  This shouldn't be necessary unless
+  you want to change or update the development image.
