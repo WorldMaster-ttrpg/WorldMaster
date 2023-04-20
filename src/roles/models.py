@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import TypeVar
 
 from django.utils.translation import gettext_lazy as _
@@ -28,6 +27,14 @@ class RoleTarget(models.Model):
         null=True,
         default=None,
         related_name='children',
+    )
+
+    users = models.ManyToManyField(
+        User,
+        related_name='role_targets',
+        related_query_name='role_target',
+        through='Role',
+        through_fields=('target', 'user'),
     )
 
     def user_is_role(self, user: AbstractUser | AnonymousUser, type: Role.Type) -> bool:
@@ -98,18 +105,15 @@ class Role(models.Model):
         # Simply allows seeing some object.
         VIEWER = 'viewer', _('Viewer')
 
-    # A map from a Role type to all the Role types that it auto-grants.
-    # Types don't include themselves.
-    # A signal automatically grants the sub-roles.
-    _AUTO_GRANT: Mapping[Type, frozenset[Type]] = {
-        Type.MASTER: frozenset((Type.EDITOR, Type.VIEWER)),
-        Type.EDITOR: frozenset((Type.VIEWER,)),
-        Type.VIEWER: frozenset(),
-    }
 
-    # Roles that apply recursively.  A signal takes care of actually applying these.
-    _RECURSIVE: frozenset[Type] = frozenset((Type.MASTER,))
-
+    target = models.ForeignKey(
+        RoleTarget,
+        on_delete=models.CASCADE,
+        help_text='The target for this role',
+        blank=False,
+        null=False,
+        related_name='roles',
+    )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -125,14 +129,10 @@ class Role(models.Model):
         blank=False,
         null=False,
     )
-    target = models.ForeignKey(
-        RoleTarget,
-        on_delete=models.CASCADE,
-        help_text='The target for this role',
-        blank=False,
-        null=False,
-        related_name='roles',
-    )
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['target', 'user', 'type'], name='unique_role_target_user_type'),
+        ]
 
     def __str__(self) -> str:
         return f'<Role: {repr(self.user.username)} {repr(self.type)} {repr(self.target)}>'

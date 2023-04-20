@@ -63,10 +63,12 @@ function delete_section(button: HTMLButtonElement) {
   section.disabled = !section.disabled;
 }
 
-for (const add_section_button of document.getElementsByClassName('add-section')) {
+for (const add_section_button of document.querySelectorAll('fieldset.wiki .add-section')) {
   add_section_button.addEventListener('click', (event) => add_section(event.target as HTMLButtonElement));
 }
 
-for (const delete_section_button of document.getElementsByClassName('delete-section')) {
+for (const delete_section_button of document.querySelectorAll('fieldset.wiki .delete-section')) {
   delete_section_button.addEventListener('click', (event) => delete_section(event.target as HTMLButtonElement));
 }
+
+export {}

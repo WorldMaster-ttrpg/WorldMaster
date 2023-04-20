@@ -20,18 +20,20 @@ class PlanesView(ListView):
 
     def setup(self, request, world_slug, *args, **kwargs):
         super().setup(request, world_slug, *args, **kwargs)
-        self.__world = get_object_or_404(World, slug=world_slug)
+        self.__world_queryset = World.visible_to(
+            cast(AbstractUser | AnonymousUser, self.request.user)
+        ).filter(slug=world_slug)
 
     def get_queryset(self):
         '''Get planes in this world visible to this user.
         '''
         return Plane.visible_to(
             cast(AbstractUser | AnonymousUser, self.request.user)
-        ).filter(world=self.__world)
+        ).filter(world__in=self.__world_queryset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data()
-        context['world'] = self.__world
+        context['world'] = self.__world_queryset.get()
         return context
 
 class PlaneView(DetailView):

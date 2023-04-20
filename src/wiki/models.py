@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from typing import Any, cast
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, AnonymousUser
@@ -25,15 +24,12 @@ class Article(RoleTargetBase, models.Model):
     """Represents a Wiki article.
     """
 
-    def sections(self) -> Iterable['Section']:
-        '''Get the sections for this article in order.
-        '''
-        return cast(QuerySet[Section], cast(Any, self).section_set).order_by('order')
+    sections: models.Manager[Section]
 
     def body_text(self) -> str:
         '''Get the joined text of all the sections of this article..
         '''
-        return '\n\n'.join(section.text for section in self.sections())
+        return '\n\n'.join(section.text for section in self.sections.order_by('order'))
 
     def update_sections(self, user: AbstractUser | AnonymousUser, data: QueryDict):
         '''Using a POST dictionary, update this article's sections.
@@ -60,14 +56,17 @@ class Article(RoleTargetBase, models.Model):
                 section = section_set.create(
                     order=order,
                     text=text,
-                    parent=self,
+                    article=self,
                 )
 
-                Role.objects.create(
-                    user=user,
-                    type=Role.Type.EDITOR,
-                    target=section.role_target,
-                )
+                kwargs = {
+                    'user': user,
+                    'type': Role.Type.EDITOR,
+                    'target': section.role_target,
+                }
+                if not Role.objects.filter(**kwargs).exists():
+                    Role.objects.create(**kwargs)
+
                 id = cast(Any, section).id
                 present_ids.add(id)
             else:
@@ -89,8 +88,11 @@ class Section(RoleTargetBase, models.Model):
         Article,
         blank=False,
         null=False,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='sections',
+        related_query_name='section',
     )
+
     text = models.TextField(blank=False, null=False, help_text='Markdown text')
 
     # Order is in a range from 0 to the number of sections on the article.

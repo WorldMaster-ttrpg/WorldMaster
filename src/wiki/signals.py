@@ -14,7 +14,7 @@ def add_article_role_target(
 ) -> None:
     '''Add the role_target where appropriate.
     '''
-    if instance.pk is None and not hasattr(instance, 'role_target'):
+    if not raw and instance.pk is None and not hasattr(instance, 'role_target'):
         instance.role_target = RoleTarget.objects.create()
 
 @receiver(pre_save, sender=Section)
@@ -28,7 +28,7 @@ def add_section_role_target(
 
     Also associate the parent appropriately.
     '''
-    if instance.pk is None and not hasattr(instance, 'role_target'):
+    if not raw and instance.pk is None and not hasattr(instance, 'role_target'):
         instance.role_target = RoleTarget.objects.create(
             parent=instance.article.role_target,
         )
