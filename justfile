@@ -7,14 +7,19 @@ all: containers
 
 images: (image "development")
 
+push-images: (push-image "development")
+
 image name:
-	"{{DOCKER}}" image build -t worldmaster:{{name}} -f ./oci/{{name}}.Containerfile .
+	"{{DOCKER}}" image build --pull -t docker.io/worldmasterttrpg/worldmaster:{{name}} -f ./oci/{{name}}.Containerfile .
+
+push-image name: (image name)
+	"{{DOCKER}}" image push docker.io/worldmasterttrpg/worldmaster:{{name}}
 
 # runserver and watchtsc
 containers: runserver watchtsc
 
 # Runs a django `manage.py {{args}}`, possibly in the background.
-development *args='': (image "development")
+development *args='':
 	#!/usr/bin/env python3
 
 	from os import environ, execvp, getuid, getgid
@@ -77,7 +82,7 @@ development *args='': (image "development")
 	cmd += args.container_arg
 
 	cmd += [
-		'worldmaster:development',
+		'docker.io/worldmasterttrpg/worldmaster:development',
 		args.entrypoint,
 	] + args.args
 
@@ -142,4 +147,4 @@ dumpdata: (development '-E/mnt/source/oci/dumpdata.sh' '-wfixtures')
 clean:
 	-"{{DOCKER}}" container stop -i worldmaster-tsc worldmaster-django
 	-"{{DOCKER}}" volume rm -f worldmaster-venv worldmaster-home
-	- rm -r dev/*
+	-rm -r dev/*
