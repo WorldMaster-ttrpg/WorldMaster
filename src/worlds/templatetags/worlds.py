@@ -1,7 +1,6 @@
 from typing import Any
 from django import template
 from django.db.models import QuerySet
-from django.utils.safestring import mark_safe
 from django.contrib.auth import get_user_model
 from roles.models import Role
 from worlds.models import World

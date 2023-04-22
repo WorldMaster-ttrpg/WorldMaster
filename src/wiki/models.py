@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.exceptions import PermissionDenied
 from django.db import models
-from django.db.models.query import QuerySet
 from django.http import QueryDict
 from django.shortcuts import get_object_or_404
 from roles.models import Role, RoleTargetBase
@@ -27,7 +26,7 @@ class Article(RoleTargetBase, models.Model):
     sections: models.Manager[Section]
 
     def body_text(self) -> str:
-        '''Get the joined text of all the sections of this article..
+        '''Get the joined text of all the sections of this article.
         '''
         return '\n\n'.join(section.text for section in self.sections.order_by('order'))
 

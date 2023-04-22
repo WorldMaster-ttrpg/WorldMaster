@@ -75,7 +75,7 @@ class EditWorldView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         data = super().get_context_data(**kwargs)
-        # Not self.objects.slug so we don't mangle the action on a failed update.
+        # Not self.object.slug so we don't mangle the action on a failed update.
         data['action'] = reverse('worlds:edit-world', kwargs={'world_slug': self.kwargs['world_slug']})
         return data
 
