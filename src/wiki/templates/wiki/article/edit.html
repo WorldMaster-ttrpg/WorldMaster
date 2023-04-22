@@ -3,7 +3,7 @@
 {% load markdown static %}
 
 {% block scripts %}
-<script async type="module" src="{% static 'wiki/wiki.js' %}"></script>
+<script async type="module" src="{% static 'wiki/edit-wiki.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -12,7 +12,7 @@
 
   {% block pre_wiki %}{% endblock %}
 
-  <fieldset>
+  <fieldset class="wiki">
     <legend>Wiki</legend>
     <ul>
       {% for section in object.sections %}

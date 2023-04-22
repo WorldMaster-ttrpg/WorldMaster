@@ -1,4 +1,5 @@
 from typing import cast
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
@@ -11,6 +12,8 @@ from worlds.models import World
 from worlds.forms import WorldForm
 from roles.models import Role
 from copy import copy
+
+User = cast(type[AbstractUser], get_user_model())
 
 class WorldsView(ListView):
     model = World
@@ -74,10 +77,22 @@ class EditWorldView(LoginRequiredMixin, View):
             # the attempt.
             form = WorldForm(request.POST, instance=copy(world))
             if form.is_valid():
+                world = cast(World, form.save())
                 world.article.update_sections(
                     user=user,
                     data=request.POST,
                 )
+
+                players = frozenset(request.POST.getlist('player', ()))
+                old_players: frozenset[str] = frozenset(world.players.all().values_list('username', flat=True))
+                added_players = players - old_players
+                removed_players = old_players - players
+
+                for username in removed_players:
+                    world.players.remove(User.objects.get(username=username))
+
+                for username in added_players:
+                    world.players.add(User.objects.get(username=username))
 
                 return redirect(form.save())
             else:

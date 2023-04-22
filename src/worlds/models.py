@@ -53,8 +53,16 @@ class World(
     including all planes, and encompassing all history.
 
     "World" does not mean the same thing as "planet", but is closer to
-    "universe" or "multiverse".
+    "universe".
     '''
+
+    players = models.ManyToManyField(
+        User,
+        related_name='worlds',
+        related_query_name='world',
+        through='Player',
+        through_fields=('world', 'user'),
+    )
 
     # Need this, otherwise the Article.world relation conflicts with the parent
     # relations like Plane.world and such.
@@ -69,6 +77,24 @@ class World(
 
     def __str__(self) -> str:
         return self.slug
+
+class Player(models.Model):
+    '''A junction table to manage what users are players of a world.
+    '''
+    world = models.ForeignKey(
+        World,
+        on_delete=models.CASCADE,
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['world', 'user'], name='unique_player_world_user'),
+        ]
+
 
 class WorldChild(models.Model):
     '''A model that's the child of a world

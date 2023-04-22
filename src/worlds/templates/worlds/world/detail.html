@@ -8,6 +8,12 @@
 {% endblock %}
 
 {% block post_wiki %}
+<p>Players:</p>
+<ul class="players">
+  {% for player in object.players.all %}
+  <li>{{ player.username }}</li>
+  {% endfor %}
+</ul>
 <p><a href="{% url 'worlds:edit-world' object.slug %}">Edit {{ object.name }}</a></p>
 <p><a href="{% url 'worlds:planes' object.slug %}">View planes</a></p>
 <p><a href="{% url 'worlds:new-plane' object.slug %}">Create new plane</a></p>
