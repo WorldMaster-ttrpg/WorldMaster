@@ -1,9 +1,12 @@
+{% load sekizai_tags %}
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <title>{% block title %}WorldMaster{% endblock %}</title>
-  {% block scripts %}{% endblock %}
+  {% block head %}{% endblock %}
+  {% render_block "head" %}
 </head>
 
 <body>

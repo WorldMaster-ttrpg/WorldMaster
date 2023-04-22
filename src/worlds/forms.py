@@ -23,15 +23,3 @@ class WorldForm(SluggedForm):
 class PlaneForm(SluggedForm):
     class Meta(SluggedForm.Meta):
         model = Plane
-
-    def __init__(self, *args, world: World | None = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if world is not None:
-            self.instance.world = world
-            self.instance.parent = world
-
-        if self.instance.world is None:
-            raise ValueError('PlaneForm needs a world')
-
-    def clean_slug(self):
-        return slugify(self.cleaned_data['name'])

@@ -1,14 +1,5 @@
-{% extends "wiki/article/edit.html" %}
+{% extends "worlds/edit.html" %}
 
-{% block form_attrs %}
-action="{% url 'worlds:edit-plane' object.world.slug object.slug %}"
-{% endblock %}
-
-{% block pre_wiki %}
-  <fieldset>
-    <legend>Edit {{ object.name }}</legend>
-    <ul>
-      {{form.as_ul}}
-    </ul>
-  </fieldset>
+{% block extra %}
+{% include "wiki/article/_edit.html" with object=object.article %}
 {% endblock %}

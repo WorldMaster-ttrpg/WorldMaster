@@ -1,12 +1,12 @@
-{% extends "wiki/article/detail.html" %}
+{% extends "worlds/base.html" %}
 
-{% block pre_wiki %}
+{% block content %}
 <h1>This is a plane named {{ object.name }}</h1>
 
 <p>Name: {{ object.name }}</p>
 <p>Slug: {{ object.slug }}</p>
-{% endblock %}
 
-{% block post_wiki %}
+{% include "wiki/article/_detail.html" with object=object.article %}
+
 <p><a href="{% url 'worlds:edit-plane' object.world.slug object.slug %}">Edit {{ object.name }}</a></p>
 {% endblock %}

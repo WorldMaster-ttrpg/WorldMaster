@@ -1,12 +1,13 @@
 from __future__ import annotations
-from typing import cast
+from typing import Any, cast
 from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.exceptions import PermissionDenied
 
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render, redirect
-from django.views.generic import ListView, DetailView, View
+from django.urls import reverse
+from django.views.generic import CreateView, ListView, DetailView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from roles.models import Role
 from worlds.models import World, Plane
@@ -18,32 +19,11 @@ class PlanesView(ListView):
     model = Plane
     template_name = 'worlds/plane/index.html'
 
-    def setup(self, request, world_slug, *args, **kwargs):
-        super().setup(request, world_slug, *args, **kwargs)
-        self.__world_queryset = World.visible_to(
+    def setup(self, request, *args, world_slug, **kwargs) -> None:
+        super().setup(request, *args, world_slug=world_slug, **kwargs)
+        self.__world = World.visible_to(
             cast(AbstractUser | AnonymousUser, self.request.user)
-        ).filter(slug=world_slug)
-
-    def get_queryset(self):
-        '''Get planes in this world visible to this user.
-        '''
-        return Plane.visible_to(
-            cast(AbstractUser | AnonymousUser, self.request.user)
-        ).filter(world__in=self.__world_queryset)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data()
-        context['world'] = self.__world_queryset.get()
-        return context
-
-class PlaneView(DetailView):
-    model = Plane
-    template_name = 'worlds/plane/detail.html'
-    slug_url_kwarg = 'plane_slug'
-
-    def setup(self, request, world_slug, *args, **kwargs):
-        super().setup(request, world_slug, *args, **kwargs)
-        self.__world = get_object_or_404(World, slug=world_slug)
+        ).filter(slug=world_slug).get()
 
     def get_queryset(self):
         '''Get planes in this world visible to this user.
@@ -52,74 +32,97 @@ class PlaneView(DetailView):
             cast(AbstractUser | AnonymousUser, self.request.user)
         ).filter(world=self.__world)
 
-class NewPlaneView(LoginRequiredMixin, View):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context['world'] = self.__world
+        return context
+
+class PlaneView(DetailView):
+    model = Plane
+    template_name = 'worlds/plane/detail.html'
+    slug_url_kwarg = 'plane_slug'
+
+    def setup(self, request, *args, world_slug, **kwargs) -> None:
+        super().setup(request, *args, world_slug=world_slug, **kwargs)
+        self.__world = World.visible_to(
+            cast(AbstractUser | AnonymousUser, self.request.user)
+        ).filter(slug=world_slug).get()
+
+    def get_queryset(self):
+        '''Get planes in this world visible to this user.
+        '''
+        return Plane.visible_to(
+            cast(AbstractUser | AnonymousUser, self.request.user)
+        ).filter(world=self.__world)
+
+class NewPlaneView(LoginRequiredMixin, CreateView):
+    model = Plane
+    form_class = PlaneForm
     template_name = 'worlds/plane/new.html'
 
-    def get(self, request: HttpRequest, world_slug: str) -> HttpResponse:
-        with transaction.atomic():
-            world = get_object_or_404(World, slug=world_slug)
-            user = cast(worldmaster.User, request.user)
-            if not world.role_target.user_is_editor(user):
-                raise PermissionDenied('User can not edit world')
-            form = PlaneForm(world=world)
-            context = {
-                'form': form,
-                'world': world,
-            }
-            return HttpResponse(render(request, self.template_name, context))
+    object: Plane
 
-    def post(self, request: HttpRequest, world_slug: str) -> HttpResponse:
-        with transaction.atomic():
-            world = get_object_or_404(World, slug=world_slug)
-            user = cast(worldmaster.User, request.user)
-            if not world.role_target.user_is_editor(user):
-                raise PermissionDenied('User can not edit world')
-            form = PlaneForm(request.POST, world=world)
-            if form.is_valid():
-                form.instance.world = world
-                plane: Plane = form.save()
-                user = cast(worldmaster.User, request.user)
-                Role.objects.create(
-                    user=request.user,
-                    type=Role.Type.EDITOR,
-                    target=plane.role_target,
-                )
-                return redirect(plane)
-            else:
-                return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'world': world}))
+    def get_form(self, form_class=None) -> PlaneForm:
+        form: PlaneForm = super().get_form(form_class)
+        form.instance.world = World.editable_by(
+            cast(AbstractUser | AnonymousUser, self.request.user)
+        ).filter(slug=self.kwargs['world_slug']).get()
 
-class EditPlaneView(LoginRequiredMixin, View):
+        return form
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        data = super().get_context_data(**kwargs)
+        data['action'] = reverse('worlds:new-plane', kwargs={
+            'world_slug': self.kwargs['world_slug'],
+        })
+        return data
+
+    def form_valid(self, form: PlaneForm) -> HttpResponse:
+        response = super().form_valid(form)
+        kwargs = {
+            'user': self.request.user,
+            'type': Role.Type.EDITOR,
+            'target': self.object.role_target,
+        }
+        if not Role.objects.filter(**kwargs).exists():
+            Role.objects.create(**kwargs)
+        return response
+
+    @transaction.atomic
+    def post(self, *args, **kwargs) -> HttpResponse:
+        return super().post(*args, **kwargs)
+
+class EditPlaneView(LoginRequiredMixin, UpdateView):
     template_name = 'worlds/plane/edit.html'
+    model = Plane
+    slug_url_kwarg = 'plane_slug'
+    form_class = PlaneForm
+    template_name = 'worlds/plane/edit.html'
+    object: Plane
 
-    def get(self, request: HttpRequest, world_slug: str, plane_slug: str) -> HttpResponse:
-        with transaction.atomic():
-            plane: Plane = get_object_or_404(Plane, world__slug=world_slug, slug=plane_slug)
-            user = cast(worldmaster.User, request.user)
-            if not plane.role_target.user_is_editor(user):
-                raise PermissionDenied('User can not edit plane')
-            form = PlaneForm(instance=plane)
-            return HttpResponse(render(request, self.template_name, {'form': form, 'object': plane}))
+    def get_queryset(self):
+        '''Get planes in this world visible to this user.
+        '''
+        return Plane.visible_to(
+            cast(AbstractUser | AnonymousUser, self.request.user)
+        ).filter(world__slug=self.kwargs['world_slug'])
 
-    def post(self, request: HttpRequest, world_slug: str, plane_slug: str) -> HttpResponse:
-        with transaction.atomic():
-            plane: Plane = get_object_or_404(Plane, world__slug=world_slug, slug=plane_slug)
-            user = cast(worldmaster.User, request.user)
-            if not plane.role_target.user_is_editor(user):
-                raise PermissionDenied('User can not edit plane')
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        data = super().get_context_data(**kwargs)
+        data['action'] = reverse('worlds:edit-plane', kwargs={
+            'world_slug': self.kwargs['world_slug'],
+            'plane_slug': self.kwargs['plane_slug'],
+        })
+        return data
 
-            # Copy the object in so that the bad request page doesn't get the
-            # modified instance. If you don't do this and you try to change the
-            # slug, even if it fails, the form action will be changed to match
-            # the attempt.
-            # We might want to counteract this by just making the slug non-
-            # editable. This would also avoid breaking links.
-            form = PlaneForm(request.POST, instance=copy(plane))
-            if form.is_valid():
-                plane.article.update_sections(
-                    user=user,
-                    data=request.POST,
-                )
+    @transaction.atomic
+    def post(self, *args, **kwargs) -> HttpResponse:
+        return super().post(*args, **kwargs)
 
-                return redirect(form.save())
-            else:
-                return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'object': plane}))
+    def form_valid(self, form: PlaneForm) -> HttpResponse:
+        response = super().form_valid(form)
+        self.object.article.update_sections(
+            user=self.request.user,
+            data=self.request.POST,
+        )
+        return response

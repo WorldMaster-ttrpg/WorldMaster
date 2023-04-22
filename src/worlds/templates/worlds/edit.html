@@ -1,14 +1,21 @@
 {% extends "worlds/base.html" %}
 
+{% load static %}
+
 {% block content %}
 <form action="{{ action }}" method="post">
   {% csrf_token %}
+
   <fieldset>
-    <legend>Create your new plane</legend>
-    <table>
-      {{ form.as_p }}
-    </table>
+    <legend>Edit {{object.name}}</legend>
+    <ul>
+      {{form.as_ul}}
+    </ul>
   </fieldset>
+
+  {% block extra %}
+  {% endblock %}
+
   <input type="submit" value="Submit">
 </form>
 {% endblock %}

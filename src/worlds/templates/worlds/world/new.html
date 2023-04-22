@@ -1,7 +1,7 @@
 {% extends "worlds/base.html" %}
 
 {% block content %}
-<form action="{% url 'worlds:new-world' %}" method="post">
+<form action="{{ action }}" method="post">
   {% csrf_token %}
   <fieldset>
     <legend>Create your new world</legend>

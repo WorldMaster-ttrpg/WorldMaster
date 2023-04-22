@@ -1,13 +1,16 @@
-from typing import cast
+from typing import Any, cast
+from functools import lru_cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render, redirect
-from django.views.generic import ListView, DetailView, View
+from django.urls import reverse
+from django.views.generic import CreateView, ListView, DetailView, UpdateView, View
 from django.db import transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.template import RequestContext
 from worlds.models import World
 from worlds.forms import WorldForm
 from roles.models import Role
@@ -34,66 +37,69 @@ class WorldView(DetailView):
         '''
         return World.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
 
-class NewWorldView(LoginRequiredMixin, View):
+class NewWorldView(LoginRequiredMixin, CreateView):
+    model = World
+    form_class = WorldForm
     template_name = 'worlds/world/new.html'
-    def get(self, request: HttpRequest) -> HttpResponse:
-        form = WorldForm()
-        return HttpResponse(render(request, self.template_name, {'form': form}))
+    object: World
 
-    def post(self, request: HttpRequest) -> HttpResponse:
-        with transaction.atomic():
-            form = WorldForm(request.POST)
-            if form.is_valid():
-                world: World = form.save()
-                Role.objects.create(
-                    user=request.user,
-                    type=Role.Type.MASTER,
-                    target=world.role_target,
-                )
-                return redirect(world)
-            else:
-                return HttpResponseBadRequest(render(request, self.template_name, {'form': form}))
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        data = super().get_context_data(**kwargs)
+        data['action'] = reverse('worlds:new-world')
+        return data
 
-class EditWorldView(LoginRequiredMixin, View):
+    def form_valid(self, form: WorldForm) -> HttpResponse:
+        response = super().form_valid(form)
+        Role.objects.create(
+            user=self.request.user,
+            type=Role.Type.MASTER,
+            target=self.object.role_target,
+        )
+        return response
+
+    @transaction.atomic
+    def post(self, *args, **kwargs) -> HttpResponse:
+        return super().post(*args, **kwargs)
+
+class EditWorldView(LoginRequiredMixin, UpdateView):
+    model = World
+    slug_url_kwarg = 'world_slug'
+    form_class = WorldForm
     template_name = 'worlds/world/edit.html'
-    def get(self, request: HttpRequest, world_slug: str) -> HttpResponse:
-        user = cast(AbstractUser | AnonymousUser, request.user)
-        world: World = get_object_or_404(World, slug=world_slug)
-        if not world.role_target.user_is_editor(user):
-            raise PermissionDenied('User can not edit world')
-        form = WorldForm(instance=world)
-        return HttpResponse(render(request, self.template_name, {'form': form, 'object': world}))
+    object: World
 
-    def post(self, request: HttpRequest, world_slug: str) -> HttpResponse:
-        with transaction.atomic():
-            user = cast(AbstractUser | AnonymousUser, request.user)
-            world: World = get_object_or_404(World, slug=world_slug)
-            if not world.role_target.user_is_editor(user):
-                raise PermissionDenied('User can not edit world')
+    def get_queryset(self) -> QuerySet[World]:
+        '''Get the visible worlds for the given user.
+        '''
+        return World.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
 
-            # Copy the object in so that the bad request page doesn't get the
-            # modified instance. If you don't do this and you try to change the
-            # slug, even if it fails, the form action will be changed to match
-            # the attempt.
-            form = WorldForm(request.POST, instance=copy(world))
-            if form.is_valid():
-                world = cast(World, form.save())
-                world.article.update_sections(
-                    user=user,
-                    data=request.POST,
-                )
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        data = super().get_context_data(**kwargs)
+        # Not self.objects.slug so we don't mangle the action on a failed update.
+        data['action'] = reverse('worlds:edit-world', kwargs={'world_slug': self.kwargs['world_slug']})
+        return data
 
-                players = frozenset(request.POST.getlist('player', ()))
-                old_players: frozenset[str] = frozenset(world.players.all().values_list('username', flat=True))
-                added_players = players - old_players
-                removed_players = old_players - players
+    @transaction.atomic
+    def post(self, *args, **kwargs) -> HttpResponse:
+        return super().post(*args, **kwargs)
 
-                for username in removed_players:
-                    world.players.remove(User.objects.get(username=username))
+    def form_valid(self, form: WorldForm) -> HttpResponse:
+        response = super().form_valid(form)
 
-                for username in added_players:
-                    world.players.add(User.objects.get(username=username))
+        self.object.article.update_sections(
+            user=self.request.user,
+            data=self.request.POST,
+        )
 
-                return redirect(form.save())
-            else:
-                return HttpResponseBadRequest(render(request, self.template_name, {'form': form, 'object': world}))
+        players = frozenset(self.request.POST.getlist('player', ()))
+        old_players: frozenset[str] = frozenset(self.object.players.all().values_list('username', flat=True))
+        added_players = players - old_players
+        removed_players = old_players - players
+
+        for username in removed_players:
+            self.object.players.remove(User.objects.get(username=username))
+
+        for username in added_players:
+            self.object.players.add(User.objects.get(username=username))
+
+        return response

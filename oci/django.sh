@@ -6,8 +6,8 @@ venv=${venv:-$(mktemp -d)}
 
 if ! [ -e "${venv}/bin/activate" ]; then
   python3 -mvenv "$venv"
-  "$venv/bin/pip" install -e .
 fi
+"$venv/bin/pip" install -e .
 
 "$venv/bin/python" ./manage.py migrate
 

@@ -4,7 +4,7 @@
 <h1>Planes in {{ world.name }}</h1>
 
 <ul>
-  {% for plane in plane_list %}
+  {% for plane in object_list %}
   <li><a href="{% url 'worlds:plane' world.slug plane.slug %}">{{ plane.name }}</a></li>
   {% endfor %}
 </ul>

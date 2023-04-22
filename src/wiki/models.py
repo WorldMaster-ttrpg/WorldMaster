@@ -48,7 +48,7 @@ class Article(RoleTargetBase, models.Model):
         # deleted)
         present_ids = set(id for id in section_ids if id is not None)
 
-        section_set: QuerySet[Section] = cast(Any, self).section_set
+        section_set = self.sections.all()
 
         for id, order, text in zip(section_ids, section_orders, sections):
             section: Section
