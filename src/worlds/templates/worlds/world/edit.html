@@ -1,38 +1,25 @@
-{% extends "wiki/article/edit.html" %}
+{% extends "worlds/edit.html" %}
 
 {% load static %}
 
-{% block scripts %}
+{% block head %}
 {{ block.super }}
 <script async type="module" src="{% static 'worlds/edit-players.js' %}"></script>
 {% endblock %}
 
-{% block form_attrs %}
-action="{% url 'worlds:edit-world' object.slug %}"
-{% endblock %}
+{% block extra %}
+{% include "wiki/article/_edit.html" with object=object.article %}
 
-{% block pre_wiki %}
-  <h1>Edit {{object.name}}</h1>
-
-  <fieldset class="world">
-    <legend>World</legend>
-    <ul>
-      {{form.as_ul}}
-    </ul>
-  </fieldset>
-{% endblock %}
-
-{% block post_wiki %}
-  <fieldset class="players">
-    <legend>Players</legend>
-    <ul class="players">
-      {% for player in object.players.all %}
-      <li>
-        <input name="player" value="{{ player.username }}">
-        <button type="button" class="delete-player">🗑️</button>
-      </li>
-      {% endfor %}
-      <li><button type="button" class="add-player">+</button></li>
-    </ul>
-  </fieldset>
+<fieldset class="players">
+  <legend>Players</legend>
+  <ul class="players">
+    {% for player in object.players.all %}
+    <li>
+      <input name="player" value="{{ player.username }}">
+      <button type="button" class="delete-player">🗑️</button>
+    </li>
+    {% endfor %}
+    <li><button type="button" class="add-player">+</button></li>
+  </ul>
+</fieldset>
 {% endblock %}

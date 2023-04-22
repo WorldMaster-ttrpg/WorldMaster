@@ -1,11 +1,13 @@
 {% extends "worlds/base.html" %}
 
+{% load worlds %}
+
 {% block content %}
 <h1>Worlds</h1>
 {% if not user.is_anonymous %}
 <h2>Your Worlds</h2>
 <ul>
-  {% for world in user.world_set.all %}
+  {% for world in user|mastered_worlds %}
   <li><a href="{% url 'worlds:world' world.slug %}">{{ world.name }}</a></li>
   {% endfor %}
 </ul>

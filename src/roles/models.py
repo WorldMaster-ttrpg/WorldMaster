@@ -113,6 +113,7 @@ class Role(models.Model):
         blank=False,
         null=False,
         related_name='roles',
+        related_query_name='role',
     )
     user = models.ForeignKey(
         User,
@@ -121,6 +122,7 @@ class Role(models.Model):
         blank=True,
         null=True,
         related_name='roles',
+        related_query_name='role',
     )
     type = models.SlugField(
         max_length=16,
@@ -163,11 +165,26 @@ class RoleTargetBase(models.Model):
             return cls.objects.all()
         elif user.is_anonymous:
             return cls.objects.filter(
-                role_target__roles__type=Role.Type.VIEWER,
-                role_target__roles__user=None,
+                role_target__role__type=Role.Type.VIEWER,
+                role_target__role__user=None,
             )
         else:
             return cls.objects.filter(
-                models.Q(role_target__roles__user=None) | models.Q(role_target__roles__user=user),
-                role_target__roles__type=Role.Type.VIEWER,
+                models.Q(role_target__role__user=None) | models.Q(role_target__role__user=user),
+                role_target__role__type=Role.Type.VIEWER,
+            )
+
+    @classmethod
+    def editable_by(cls: type[Subclass], user: AbstractUser | AnonymousUser) -> models.QuerySet[Subclass]:
+        if user.is_superuser:
+            return cls.objects.all()
+        elif user.is_anonymous:
+            return cls.objects.filter(
+                role_target__role__type=Role.Type.EDITOR,
+                role_target__role__user=None,
+            )
+        else:
+            return cls.objects.filter(
+                models.Q(role_target__role__user=None) | models.Q(role_target__role__user=user),
+                role_target__role__type=Role.Type.EDITOR,
             )
