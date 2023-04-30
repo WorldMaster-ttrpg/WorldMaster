@@ -6,6 +6,8 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.db import models
 from django.contrib.auth import get_user_model
+from functools import lru_cache
+from django.db import connection
 
 User = get_user_model()
 
@@ -47,27 +49,21 @@ class RoleTarget(models.Model):
         if user.is_superuser:
             return True
 
-        elif user.is_authenticated:
-            query = models.Q(
-                models.Q(user=None) | models.Q(user=user),
-                type=type,
+        if user.is_authenticated:
+            return ResolvedRole.objects.filter(
+                models.Q(user=user) | models.Q(user_id=None),
                 target=self,
-            )
-
+                type=type
+            ).exists()
         else:
-            query = models.Q(
-                user=None,
-                type=type,
+            return ResolvedRole.objects.filter(
                 target=self,
-            )
-
-        if Role.objects.filter(query).exists():
-            return True
-
-        return False
+                user_id=None,
+                type=type
+            ).exists()
 
     def user_is_master(self, user: AbstractUser | AnonymousUser) -> bool:
-        '''Returns True if the user has the MASTER role on this.
+        '''Returns True if the user has the MASTER role on this or any ancestor.
         '''
         return self.user_is_role(user, Role.Type.MASTER)
 
@@ -160,31 +156,76 @@ class RoleTargetBase(models.Model):
         abstract = True
 
     @classmethod
-    def visible_to(cls: type[Subclass], user: AbstractUser | AnonymousUser) -> models.QuerySet[Subclass]:
+    def with_role(cls: type[Subclass], user: AbstractUser | AnonymousUser, type: Role.Type) -> models.QuerySet[Subclass]:
         if user.is_superuser:
             return cls.objects.all()
-        elif user.is_anonymous:
+
+        elif user.is_authenticated:
             return cls.objects.filter(
-                role_target__role__type=Role.Type.VIEWER,
-                role_target__role__user=None,
+                models.Q(role_target__resolved_roles__user=None) | models.Q(role_target__resolved_roles__user=user),
+                role_target__resolved_roles__type=type,
             )
         else:
             return cls.objects.filter(
-                models.Q(role_target__role__user=None) | models.Q(role_target__role__user=user),
-                role_target__role__type=Role.Type.VIEWER,
+                role_target__resolved_roles__user=None,
+                role_target__resolved_roles__type=type,
             )
 
     @classmethod
+    def mastered_by(cls: type[Subclass], user: AbstractUser | AnonymousUser) -> models.QuerySet[Subclass]:
+        return cls.with_role(user, Role.Type.MASTER)
+
+    @classmethod
     def editable_by(cls: type[Subclass], user: AbstractUser | AnonymousUser) -> models.QuerySet[Subclass]:
-        if user.is_superuser:
-            return cls.objects.all()
-        elif user.is_anonymous:
-            return cls.objects.filter(
-                role_target__role__type=Role.Type.EDITOR,
-                role_target__role__user=None,
-            )
-        else:
-            return cls.objects.filter(
-                models.Q(role_target__role__user=None) | models.Q(role_target__role__user=user),
-                role_target__role__type=Role.Type.EDITOR,
-            )
+        return cls.with_role(user, Role.Type.EDITOR)
+
+    @classmethod
+    def visible_to(cls: type[Subclass], user: AbstractUser | AnonymousUser) -> models.QuerySet[Subclass]:
+        return cls.with_role(user, Role.Type.VIEWER)
+
+# This allows us to still stick with proper Django QuerySets, avoid peppering
+# raw queries through the code, and avoid using RawQuerySet, which isn't as
+# convenient to work with as QuerySet (and doesn't optimize nicely).
+# See 0006_create_roletargetroles for the definition of the view.
+class ResolvedRole(models.Model):
+    '''A non-managed model for a view that resolves all roles for all
+    role_targets.
+
+    Conceptually, this has one row for every role that every use has on every
+    target, including inherited and implied roles.
+
+    The pk should be treated as opaque and unimportant.  It exists just to make
+django happy.
+    '''
+    id = models.TextField(
+        blank=False,
+        null=False,
+        primary_key=True,
+    )
+
+    target = models.ForeignKey(
+        RoleTarget,
+        blank=False,
+        null=False,
+        on_delete=models.DO_NOTHING,
+        related_name='resolved_roles',
+    )
+
+    user = models.ForeignKey(
+        User,
+        blank=True,
+        null=True,
+        on_delete=models.DO_NOTHING,
+        related_name='resolved_roles',
+    )
+
+    type = models.SlugField(
+        max_length=16,
+        help_text='The role type, like owner, editor, viewer, etc',
+        choices=Role.Type.choices,
+        blank=False,
+        null=False,
+    )
+
+    class Meta:
+        managed = False
