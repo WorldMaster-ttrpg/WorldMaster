@@ -39,6 +39,8 @@ class RoleTarget(models.Model):
         through_fields=('target', 'user'),
     )
 
+    resolved_roles: models.Manager[ResolvedRole]
+
     def user_is_role(self, user: AbstractUser | AnonymousUser, type: Role.Type) -> bool:
         '''Return True if the user counts as this role.
         
@@ -49,18 +51,15 @@ class RoleTarget(models.Model):
         if user.is_superuser:
             return True
 
+        user_check = models.Q(user=None)
+
         if user.is_authenticated:
-            return ResolvedRole.objects.filter(
-                models.Q(user=user) | models.Q(user_id=None),
-                target=self,
-                type=type
-            ).exists()
-        else:
-            return ResolvedRole.objects.filter(
-                target=self,
-                user_id=None,
-                type=type
-            ).exists()
+            user_check |=  models.Q(user=user)
+
+        return self.resolved_roles.filter(
+            user_check,
+            type=type
+        ).exists()
 
     def user_is_master(self, user: AbstractUser | AnonymousUser) -> bool:
         '''Returns True if the user has the MASTER role on this or any ancestor.
@@ -160,16 +159,15 @@ class RoleTargetBase(models.Model):
         if user.is_superuser:
             return cls.objects.all()
 
-        elif user.is_authenticated:
-            return cls.objects.filter(
-                models.Q(role_target__resolved_roles__user=None) | models.Q(role_target__resolved_roles__user=user),
-                role_target__resolved_roles__type=type,
-            )
-        else:
-            return cls.objects.filter(
-                role_target__resolved_roles__user=None,
-                role_target__resolved_roles__type=type,
-            )
+        user_check = models.Q(role_target__resolved_roles__user=None)
+
+        if user.is_authenticated:
+            user_check |= models.Q(role_target__resolved_roles__user=user)
+
+        return cls.objects.filter(
+            user_check,
+            role_target__resolved_roles__type=type,
+        )
 
     @classmethod
     def mastered_by(cls: type[Subclass], user: AbstractUser | AnonymousUser) -> models.QuerySet[Subclass]:
