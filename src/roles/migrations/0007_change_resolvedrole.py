@@ -9,14 +9,14 @@ def normalize(sql: str) -> str:
     uncommented = [line for line in sql.splitlines() if line.strip() and not line.lstrip().startswith('--')]
     return dedent('\n'.join(uncommented))
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('roles', '0005_alter_role_target_alter_role_user'),
+        ('roles', '0006_create_resolvedrole'),
     ]
 
     operations = [
-
         migrations.RunSQL(
             sql=[
                 'DROP VIEW IF EXISTS roles_resolvedrole',
@@ -62,13 +62,13 @@ class Migration(migrations.Migration):
                         -- Union with the computed masterships
                         SELECT target_id, user_id, 'master' FROM mastered_targets
 
-                        UNION ALL
+                        UNION
 
                         -- Add 'editor' if the inferred types had 'master'
                         SELECT target_id, user_id, 'editor' FROM resolvedrole
                             WHERE resolvedrole.type = 'master'
 
-                        UNION ALL
+                        UNION
 
                         -- Add 'viewer' if the inferred types had 'editor'
                         SELECT target_id, user_id, 'viewer' FROM resolvedrole
@@ -77,20 +77,9 @@ class Migration(migrations.Migration):
 
                     -- Need an arbitrary ID to act as the primary key
                     SELECT (target_id || '.' || user_id || '.' || type) as id, target_id, user_id, type FROM resolvedrole
-                ''')
+                '''),
             ],
-            reverse_sql='DROP VIEW IF EXISTS roles_resolvedrole',
-            state_operations=[
-                migrations.CreateModel(
-                    name='ResolvedRole',
-                    fields=[
-                        ('id', models.TextField(primary_key=True, serialize=False)),
-                        ('type', models.SlugField(choices=[('master', 'Master'), ('editor', 'Editor'), ('viewer', 'Viewer')], help_text='The role type, like owner, editor, viewer, etc', max_length=16)),
-                    ],
-                    options={
-                        'managed': False,
-                    },
-                ),
-            ]
+            # Can't really reverse this one without reapplying the previous one.
+            reverse_sql=migrations.RunSQL.noop,
         ),
     ]

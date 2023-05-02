@@ -1,19 +1,15 @@
 from __future__ import annotations
 from typing import Any, cast
 from django.contrib.auth.models import AbstractUser, AnonymousUser
-from django.core.exceptions import PermissionDenied
 
 from django.db import transaction
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, render, redirect
+from django.http import HttpResponse
 from django.urls import reverse
-from django.views.generic import CreateView, ListView, DetailView, UpdateView, View
+from django.views.generic import CreateView, ListView, DetailView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from roles.models import Role
 from worlds.models import World, Plane
 from worlds.forms import PlaneForm
-from copy import copy
-from worldmaster import models as worldmaster
 
 class PlanesView(ListView):
     model = Plane
@@ -21,14 +17,14 @@ class PlanesView(ListView):
 
     def setup(self, request, *args, world_slug, **kwargs) -> None:
         super().setup(request, *args, world_slug=world_slug, **kwargs)
-        self.__world = World.visible_to(
+        self.__world = World.objects.visible_to(
             cast(AbstractUser | AnonymousUser, self.request.user)
         ).filter(slug=world_slug).get()
 
     def get_queryset(self):
         '''Get planes in this world visible to this user.
         '''
-        return Plane.visible_to(
+        return Plane.objects.visible_to(
             cast(AbstractUser | AnonymousUser, self.request.user)
         ).filter(world=self.__world)
 
@@ -44,14 +40,14 @@ class PlaneView(DetailView):
 
     def setup(self, request, *args, world_slug, **kwargs) -> None:
         super().setup(request, *args, world_slug=world_slug, **kwargs)
-        self.__world = World.visible_to(
+        self.__world = World.objects.visible_to(
             cast(AbstractUser | AnonymousUser, self.request.user)
         ).filter(slug=world_slug).get()
 
     def get_queryset(self):
         '''Get planes in this world visible to this user.
         '''
-        return Plane.visible_to(
+        return Plane.objects.visible_to(
             cast(AbstractUser | AnonymousUser, self.request.user)
         ).filter(world=self.__world)
 
@@ -64,7 +60,7 @@ class NewPlaneView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None) -> PlaneForm:
         form: PlaneForm = super().get_form(form_class)
-        form.instance.world = World.editable_by(
+        form.instance.world = World.objects.editable_by(
             cast(AbstractUser | AnonymousUser, self.request.user)
         ).filter(slug=self.kwargs['world_slug']).get()
 
@@ -103,7 +99,7 @@ class EditPlaneView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         '''Get planes in this world visible to this user.
         '''
-        return Plane.visible_to(
+        return Plane.objects.visible_to(
             cast(AbstractUser | AnonymousUser, self.request.user)
         ).filter(world__slug=self.kwargs['world_slug'])
 

@@ -12,4 +12,7 @@ fi
 fixtures=${worldmaster_fixtures:-./fixtures}
 mkdir -p "$fixtures"
 
-exec "$venv/bin/python" ./manage.py dumpdata -o "$fixtures/$(date +%FT%H-%M-%S).json"
+exec "$venv/bin/python" ./manage.py dumpdata \
+  -o "$fixtures/$(date +%FT%H-%M-%S).json" \
+  --natural-foreign \
+  --natural-primary
