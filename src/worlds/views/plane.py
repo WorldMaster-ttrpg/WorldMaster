@@ -1,19 +1,15 @@
 from __future__ import annotations
 from typing import Any, cast
 from django.contrib.auth.models import AbstractUser, AnonymousUser
-from django.core.exceptions import PermissionDenied
 
 from django.db import transaction
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, render, redirect
+from django.http import HttpResponse
 from django.urls import reverse
-from django.views.generic import CreateView, ListView, DetailView, UpdateView, View
+from django.views.generic import CreateView, ListView, DetailView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from roles.models import Role
 from worlds.models import World, Plane
 from worlds.forms import PlaneForm
-from copy import copy
-from worldmaster import models as worldmaster
 
 class PlanesView(ListView):
     model = Plane

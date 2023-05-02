@@ -1,20 +1,15 @@
 from typing import Any, cast
-from functools import lru_cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, AnonymousUser
-from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, render, redirect
+from django.http import HttpResponse
 from django.urls import reverse
-from django.views.generic import CreateView, ListView, DetailView, UpdateView, View
+from django.views.generic import CreateView, ListView, DetailView, UpdateView
 from django.db import transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.template import RequestContext
 from worlds.models import World
 from worlds.forms import WorldForm
 from roles.models import Role
-from copy import copy
 
 User = cast(type[AbstractUser], get_user_model())
 

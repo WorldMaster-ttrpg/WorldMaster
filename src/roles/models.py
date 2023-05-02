@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.db import models
 from django.contrib.auth import get_user_model
-from functools import lru_cache
-from django.db import connection
+
+if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
 
 User = get_user_model()
 
@@ -39,6 +40,8 @@ class RoleTarget(models.Model):
         through_fields=('target', 'user'),
     )
 
+    resolved_roles: RelatedManager[ResolvedRole]
+
     def user_is_role(self, user: AbstractUser | AnonymousUser, type: Role.Type) -> bool:
         '''Return True if the user counts as this role.
         
@@ -49,18 +52,15 @@ class RoleTarget(models.Model):
         if user.is_superuser:
             return True
 
+        user_check = models.Q(user=None)
+
         if user.is_authenticated:
-            return ResolvedRole.objects.filter(
-                models.Q(user=user) | models.Q(user_id=None),
-                target=self,
-                type=type
-            ).exists()
-        else:
-            return ResolvedRole.objects.filter(
-                target=self,
-                user_id=None,
-                type=type
-            ).exists()
+            user_check |=  models.Q(user=user)
+
+        return self.resolved_roles.filter(
+            user_check,
+            type=type
+        ).exists()
 
     def user_is_master(self, user: AbstractUser | AnonymousUser) -> bool:
         '''Returns True if the user has the MASTER role on this or any ancestor.
@@ -145,16 +145,15 @@ class RoleTargetManagerBase(models.Manager, Generic[Model]):
         if user.is_superuser:
             return self.all()
 
-        elif user.is_authenticated:
-            return self.filter(
-                models.Q(role_target__resolved_roles__user=None) | models.Q(role_target__resolved_roles__user=user),
-                role_target__resolved_roles__type=type,
-            )
-        else:
-            return self.filter(
-                role_target__resolved_roles__user=None,
-                role_target__resolved_roles__type=type,
-            )
+        user_check = models.Q(role_target__resolved_roles__user=None)
+
+        if user.is_authenticated:
+            user_check |= models.Q(role_target__resolved_roles__user=user)
+
+        return self.filter(
+            user_check,
+            role_target__resolved_roles__type=type,
+        )
 
     def mastered_by(self: RoleTargetManagerBase, user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
         return self.with_role(user, Role.Type.MASTER)
