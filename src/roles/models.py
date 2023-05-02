@@ -140,8 +140,8 @@ class Role(models.Model):
 
 Model = TypeVar('Model', bound='RoleTargetBase')
 
-class RoleTargetManagerBase(models.Manager, Generic[Model]):
-    def with_role(self: RoleTargetManagerBase, user: AbstractUser | AnonymousUser, type: Role.Type) -> models.QuerySet[Model]:
+class RoleTargetManager(models.Manager, Generic[Model]):
+    def with_role(self: RoleTargetManager, user: AbstractUser | AnonymousUser, type: Role.Type) -> models.QuerySet[Model]:
         if user.is_superuser:
             return self.all()
 
@@ -155,13 +155,13 @@ class RoleTargetManagerBase(models.Manager, Generic[Model]):
             role_target__resolved_roles__type=type,
         )
 
-    def mastered_by(self: RoleTargetManagerBase, user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
+    def mastered_by(self: RoleTargetManager, user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
         return self.with_role(user, Role.Type.MASTER)
 
-    def editable_by(self: RoleTargetManagerBase, user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
+    def editable_by(self: RoleTargetManager, user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
         return self.with_role(user, Role.Type.EDITOR)
 
-    def visible_to(self: RoleTargetManagerBase, user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
+    def visible_to(self: RoleTargetManager, user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
         return self.with_role(user, Role.Type.VIEWER)
 
 class RoleTargetBase(models.Model):

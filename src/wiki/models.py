@@ -7,7 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.http import QueryDict
 from django.shortcuts import get_object_or_404
-from roles.models import Role, RoleTargetBase, RoleTargetManagerBase
+from roles.models import Role, RoleTargetBase, RoleTargetManager
 
 User = get_user_model()
 
@@ -25,7 +25,7 @@ class Article(RoleTargetBase, models.Model):
 
     sections: models.Manager[Section]
 
-    objects: RoleTargetManagerBase[Article] = RoleTargetManagerBase()
+    objects: RoleTargetManager[Article] = RoleTargetManager()
 
     def body_text(self) -> str:
         '''Get the joined text of all the sections of this article.
@@ -101,7 +101,7 @@ class Section(RoleTargetBase, models.Model):
     # alright at preventing totally mangling an article as they edit it.
     order = models.FloatField(help_text="Section order in its article.", blank=False, null=False, default=0.0)
 
-    objects: RoleTargetManagerBase[Section] = RoleTargetManagerBase()
+    objects: RoleTargetManager[Section] = RoleTargetManager()
 
     def __str__(self):
         return self.text

@@ -7,7 +7,7 @@ from django.core.validators import MinLengthValidator
 from django.urls import reverse
 from worldmaster.validators import validate_not_reserved
 from wiki.models import ArticleBase
-from roles.models import RoleTargetBase, RoleTargetManagerBase
+from roles.models import RoleTargetBase, RoleTargetManager
 
 User = get_user_model()
 
@@ -49,7 +49,7 @@ class Slugged(models.Model):
     class Meta:
         abstract = True
 
-class WorldManager(RoleTargetManagerBase['World']):
+class WorldManager(RoleTargetManager['World']):
     def get_by_natural_key(self, slug: str) -> World:
         return self.get(slug=slug)
 
@@ -110,7 +110,7 @@ class Player(models.Model):
 
 Model = TypeVar('Model', bound='WorldChild')
 
-class WorldChildManager(RoleTargetManagerBase[Model]):
+class WorldChildManager(RoleTargetManager[Model]):
     def get_by_natural_key(self, world_slug, slug) -> Model:
         return self.get(world__slug=world_slug, slug=slug)
 
