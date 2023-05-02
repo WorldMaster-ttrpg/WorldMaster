@@ -55,7 +55,7 @@ WorldPlaneEntityEvent = TypeVar('WorldPlaneEntityEvent', World, Plane, Entity, E
 @receiver(post_delete, sender=Entity)
 @receiver(post_delete, sender=Event)
 def delete_role_target(
-    sender: WorldPlaneEntityEvent,
+    sender: type[WorldPlaneEntityEvent],
     instance: WorldPlaneEntityEvent,
     **kwargs: Any,
 ) -> None:
@@ -72,7 +72,7 @@ def delete_role_target(
 @receiver(post_delete, sender=Entity)
 @receiver(post_delete, sender=Event)
 def delete_article(
-    sender: WorldPlaneEntityEvent,
+    sender: type[WorldPlaneEntityEvent],
     instance: WorldPlaneEntityEvent,
     **kwargs: Any,
 ) -> None:

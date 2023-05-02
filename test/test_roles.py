@@ -60,17 +60,17 @@ class RoleTestCase(TestCase):
             )
         )
 
-        self.assertIn(self.world, World.mastered_by(self.user))
-        self.assertNotIn(self.world, World.mastered_by(self.other_user))
-        self.assertNotIn(self.world, World.mastered_by(self.anonymous_user))
+        self.assertIn(self.world, World.objects.mastered_by(self.user))
+        self.assertNotIn(self.world, World.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.world, World.objects.mastered_by(self.anonymous_user))
 
-        self.assertIn(self.plane, Plane.mastered_by(self.user))
-        self.assertNotIn(self.plane, Plane.mastered_by(self.other_user))
-        self.assertNotIn(self.plane, Plane.mastered_by(self.anonymous_user))
+        self.assertIn(self.plane, Plane.objects.mastered_by(self.user))
+        self.assertNotIn(self.plane, Plane.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.plane, Plane.objects.mastered_by(self.anonymous_user))
 
-        self.assertIn(self.article, Article.mastered_by(self.user))
-        self.assertNotIn(self.article, Article.mastered_by(self.other_user))
-        self.assertNotIn(self.article, Article.mastered_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.anonymous_user))
 
     def test_other_not_inherit(self):
         for type in Role.Type:
@@ -92,17 +92,17 @@ class RoleTestCase(TestCase):
                         type=type,
                     )
                 )
-                self.assertIn(self.world, World.with_role(self.user, type))
-                self.assertNotIn(self.world, World.with_role(self.other_user, type))
-                self.assertNotIn(self.world, World.with_role(self.anonymous_user, type))
+                self.assertIn(self.world, World.objects.with_role(self.user, type))
+                self.assertNotIn(self.world, World.objects.with_role(self.other_user, type))
+                self.assertNotIn(self.world, World.objects.with_role(self.anonymous_user, type))
 
-                self.assertNotIn(self.plane, Plane.with_role(self.user, type))
-                self.assertNotIn(self.plane, Plane.with_role(self.other_user, type))
-                self.assertNotIn(self.plane, Plane.with_role(self.anonymous_user, type))
+                self.assertNotIn(self.plane, Plane.objects.with_role(self.user, type))
+                self.assertNotIn(self.plane, Plane.objects.with_role(self.other_user, type))
+                self.assertNotIn(self.plane, Plane.objects.with_role(self.anonymous_user, type))
 
-                self.assertNotIn(self.article, Article.with_role(self.user, type))
-                self.assertNotIn(self.article, Article.with_role(self.other_user, type))
-                self.assertNotIn(self.article, Article.with_role(self.anonymous_user, type))
+                self.assertNotIn(self.article, Article.objects.with_role(self.user, type))
+                self.assertNotIn(self.article, Article.objects.with_role(self.other_user, type))
+                self.assertNotIn(self.article, Article.objects.with_role(self.anonymous_user, type))
         
     def test_master_implied(self):
         Role.objects.create(
@@ -166,15 +166,15 @@ class RoleTestCase(TestCase):
                 type=Role.Type.VIEWER,
             )
         )
-        self.assertIn(self.article, Article.mastered_by(self.user))
-        self.assertNotIn(self.article, Article.mastered_by(self.other_user))
-        self.assertNotIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertIn(self.article, Article.editable_by(self.user))
-        self.assertNotIn(self.article, Article.editable_by(self.other_user))
-        self.assertNotIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertNotIn(self.article, Article.visible_to(self.other_user))
-        self.assertNotIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertNotIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertNotIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_master_implied_inherited(self):
         Role.objects.create(
@@ -239,15 +239,15 @@ class RoleTestCase(TestCase):
             )
         )
 
-        self.assertIn(self.article, Article.mastered_by(self.user))
-        self.assertNotIn(self.article, Article.mastered_by(self.other_user))
-        self.assertNotIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertIn(self.article, Article.editable_by(self.user))
-        self.assertNotIn(self.article, Article.editable_by(self.other_user))
-        self.assertNotIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertNotIn(self.article, Article.visible_to(self.other_user))
-        self.assertNotIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertNotIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertNotIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_editor_implied(self):
         Role.objects.create(
@@ -311,15 +311,15 @@ class RoleTestCase(TestCase):
                 type=Role.Type.VIEWER,
             )
         )
-        self.assertNotIn(self.article, Article.mastered_by(self.user))
-        self.assertNotIn(self.article, Article.mastered_by(self.other_user))
-        self.assertNotIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertIn(self.article, Article.editable_by(self.user))
-        self.assertNotIn(self.article, Article.editable_by(self.other_user))
-        self.assertNotIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertNotIn(self.article, Article.visible_to(self.other_user))
-        self.assertNotIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertNotIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertNotIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_viewer_implied(self):
         Role.objects.create(
@@ -383,15 +383,15 @@ class RoleTestCase(TestCase):
                 type=Role.Type.VIEWER,
             )
         )
-        self.assertNotIn(self.article, Article.mastered_by(self.user))
-        self.assertNotIn(self.article, Article.mastered_by(self.other_user))
-        self.assertNotIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertNotIn(self.article, Article.editable_by(self.user))
-        self.assertNotIn(self.article, Article.editable_by(self.other_user))
-        self.assertNotIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertNotIn(self.article, Article.visible_to(self.other_user))
-        self.assertNotIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertNotIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertNotIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_master_inherit(self):
         Role.objects.create(
@@ -416,15 +416,15 @@ class RoleTestCase(TestCase):
                 user=self.anonymous_user,
             )
         )
-        self.assertIn(self.article, Article.mastered_by(self.user))
-        self.assertIn(self.article, Article.mastered_by(self.other_user))
-        self.assertIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertIn(self.article, Article.editable_by(self.user))
-        self.assertIn(self.article, Article.editable_by(self.other_user))
-        self.assertIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertIn(self.article, Article.visible_to(self.other_user))
-        self.assertIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.user))
+        self.assertIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_other_not_inherit(self):
         for type in Role.Type:
@@ -452,17 +452,17 @@ class RoleTestCase(TestCase):
                         type=type,
                     )
                 )
-                self.assertIn(self.world, World.with_role(self.user, type))
-                self.assertIn(self.world, World.with_role(self.other_user, type))
-                self.assertIn(self.world, World.with_role(self.anonymous_user, type))
+                self.assertIn(self.world, World.objects.with_role(self.user, type))
+                self.assertIn(self.world, World.objects.with_role(self.other_user, type))
+                self.assertIn(self.world, World.objects.with_role(self.anonymous_user, type))
 
-                self.assertNotIn(self.plane, Plane.with_role(self.user, type))
-                self.assertNotIn(self.plane, Plane.with_role(self.other_user, type))
-                self.assertNotIn(self.plane, Plane.with_role(self.anonymous_user, type))
+                self.assertNotIn(self.plane, Plane.objects.with_role(self.user, type))
+                self.assertNotIn(self.plane, Plane.objects.with_role(self.other_user, type))
+                self.assertNotIn(self.plane, Plane.objects.with_role(self.anonymous_user, type))
 
-                self.assertNotIn(self.article, Article.with_role(self.user, type))
-                self.assertNotIn(self.article, Article.with_role(self.other_user, type))
-                self.assertNotIn(self.article, Article.with_role(self.anonymous_user, type))
+                self.assertNotIn(self.article, Article.objects.with_role(self.user, type))
+                self.assertNotIn(self.article, Article.objects.with_role(self.other_user, type))
+                self.assertNotIn(self.article, Article.objects.with_role(self.anonymous_user, type))
         
     def test_anonymous_master_implied(self):
         Role.objects.create(
@@ -526,15 +526,15 @@ class RoleTestCase(TestCase):
                 type=Role.Type.VIEWER,
             )
         )
-        self.assertIn(self.article, Article.mastered_by(self.user))
-        self.assertIn(self.article, Article.mastered_by(self.other_user))
-        self.assertIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertIn(self.article, Article.editable_by(self.user))
-        self.assertIn(self.article, Article.editable_by(self.other_user))
-        self.assertIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertIn(self.article, Article.visible_to(self.other_user))
-        self.assertIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.user))
+        self.assertIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_master_implied_inherited(self):
         Role.objects.create(
@@ -599,15 +599,15 @@ class RoleTestCase(TestCase):
             )
         )
 
-        self.assertIn(self.article, Article.mastered_by(self.user))
-        self.assertIn(self.article, Article.mastered_by(self.other_user))
-        self.assertIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertIn(self.article, Article.editable_by(self.user))
-        self.assertIn(self.article, Article.editable_by(self.other_user))
-        self.assertIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertIn(self.article, Article.visible_to(self.other_user))
-        self.assertIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.user))
+        self.assertIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_editor_implied(self):
         Role.objects.create(
@@ -672,15 +672,15 @@ class RoleTestCase(TestCase):
             )
         )
 
-        self.assertNotIn(self.article, Article.mastered_by(self.user))
-        self.assertNotIn(self.article, Article.mastered_by(self.other_user))
-        self.assertNotIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertIn(self.article, Article.editable_by(self.user))
-        self.assertIn(self.article, Article.editable_by(self.other_user))
-        self.assertIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertIn(self.article, Article.visible_to(self.other_user))
-        self.assertIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.user))
+        self.assertIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_viewer_implied(self):
         Role.objects.create(
@@ -744,13 +744,31 @@ class RoleTestCase(TestCase):
             )
         )
 
-        self.assertNotIn(self.article, Article.mastered_by(self.user))
-        self.assertNotIn(self.article, Article.mastered_by(self.other_user))
-        self.assertNotIn(self.article, Article.mastered_by(self.anonymous_user))
-        self.assertNotIn(self.article, Article.editable_by(self.user))
-        self.assertNotIn(self.article, Article.editable_by(self.other_user))
-        self.assertNotIn(self.article, Article.editable_by(self.anonymous_user))
-        self.assertIn(self.article, Article.visible_to(self.user))
-        self.assertIn(self.article, Article.visible_to(self.other_user))
-        self.assertIn(self.article, Article.visible_to(self.anonymous_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.mastered_by(self.anonymous_user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.other_user))
+        self.assertNotIn(self.article, Article.objects.editable_by(self.anonymous_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.user))
+        self.assertIn(self.article, Article.objects.visible_to(self.other_user))
+        self.assertIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
+
+    def test_no_duplicates(self):
+        Role.objects.create(
+            target=self.world_target,
+            user=self.user,
+            type=Role.Type.MASTER,
+        )
+
+        Role.objects.create(
+            target=self.plane_target,
+            user=self.user,
+            type=Role.Type.EDITOR,
+        )
+
+        self.assertEqual(
+            Plane.objects.visible_to(self.user).count(),
+            1
+        )

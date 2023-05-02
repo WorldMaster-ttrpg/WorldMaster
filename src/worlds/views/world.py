@@ -25,7 +25,7 @@ class WorldsView(ListView):
     def get_queryset(self) -> QuerySet[World]:
         '''Get the visible worlds for the given user.
         '''
-        return World.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
+        return World.objects.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
 
 class WorldView(DetailView):
     model = World
@@ -35,7 +35,7 @@ class WorldView(DetailView):
     def get_queryset(self) -> QuerySet[World]:
         '''Get the visible worlds for the given user.
         '''
-        return World.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
+        return World.objects.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
 
 class NewWorldView(LoginRequiredMixin, CreateView):
     model = World
@@ -71,7 +71,7 @@ class EditWorldView(LoginRequiredMixin, UpdateView):
     def get_queryset(self) -> QuerySet[World]:
         '''Get the visible worlds for the given user.
         '''
-        return World.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
+        return World.objects.visible_to(cast(AbstractUser | AnonymousUser, self.request.user))
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         data = super().get_context_data(**kwargs)
