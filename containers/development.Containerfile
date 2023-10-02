@@ -1,11 +1,10 @@
-# We want to use Python 3.11, so bookworm is the best option, even though it's
-# still testing.
 FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN \
-  --mount=type=cache,target=/var/cache/apt \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+  --mount=type=cache,target=/var/cache/apt,sharing=locked \
   apt update && \
   apt upgrade -y && \
   apt install -y \
@@ -18,11 +17,11 @@ RUN \
   wget \
   yarnpkg
 
-# install watchexec
+# install watchexec for the tsc recompilation
 RUN \
   --mount=type=tmpfs,target=/tmp/watchexecinstall \
   cd /tmp/watchexecinstall && \
-  wget -O watchexec.deb https://github.com/watchexec/watchexec/releases/download/v1.22.2/watchexec-1.22.2-x86_64-unknown-linux-gnu.deb && \
+  wget -O watchexec.deb https://github.com/watchexec/watchexec/releases/download/v1.23.0/watchexec-1.23.0-x86_64-unknown-linux-gnu.deb && \
   apt install -y ./watchexec.deb
 # This container runs as root so that the user can read all the bind mounts
 

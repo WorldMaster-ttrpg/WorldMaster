@@ -1,150 +1,65 @@
 set positional-arguments
 
-export DOCKER := env_var_or_default('DOCKER', 'podman')
+_list:
+	@just --list
 
-# Run containers
-all: containers
-
+# Build all images.
 images: (image "development")
 
+# Push all images.
 push-images: (push-image "development")
 
+# Build the named image as the worldmaster tag.
 image name:
-	"{{DOCKER}}" image build --pull -t docker.io/worldmasterttrpg/worldmaster:{{name}} -f ./oci/{{name}}.Containerfile .
+	podman image build --pull -t docker.io/worldmasterttrpg/worldmaster:{{name}} -f ./containers/{{name}}.Containerfile .
 
+# Push the named image as the worldmaster tag.
 push-image name: (image name)
-	"{{DOCKER}}" image push docker.io/worldmasterttrpg/worldmaster:{{name}}
+	podman image push docker.io/worldmasterttrpg/worldmaster:{{name}}
 
-# runserver and watchtsc
-containers: runserver watchtsc
+# Start up development pods.  This is necessary to access the site on a web browser.
+pods: django watchtsc
 
-# Runs a django `manage.py {{args}}`, possibly in the background.
-development *args='':
-	#!/usr/bin/env python3
+# Tear down running worldmaster pods.
+down:
+	-just down-django
+	-just down-watchtsc
+	-just down-dev
 
-	from os import environ, execvp, getuid, getgid
-	from shlex import join
-	import argparse
+# Run the django pod, which runs `runserver`.
+django:
+	podman kube play ./containers/kube/django.yml
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--port', '-p', type=lambda value: tuple(map(int, value.split(':'))))
-	parser.add_argument('--background', '-b', action='store_true')
-	parser.add_argument('--name', '-n')
-	parser.add_argument('--entrypoint', '-E', default='/mnt/source/oci/django.sh')
-	parser.add_argument('--container-arg', '-a', action='append', default=[])
-	parser.add_argument('--mount', '-m', action='append', default=['static', 'fixtures'])
-	parser.add_argument('--write-mount', '-w', action='append', default=['dev'])
-	parser.add_argument('args', nargs='*')
-	args = parser.parse_args()
+# Run the watchtsc pod, which compiles typescript to js on all changes into the shared static volume.
+watchtsc:
+	podman kube play ./containers/kube/watchtsc.yml
 
-	# Need to make sure we maintain order.
-	writable = args.write_mount
-	writable_set = frozenset(writable)
-	read_only = [i for i in args.mount if i not in writable_set]
+# Start up a dev pod and run a shell on it with the venv activated.  This is usefull for running arbitrary django-admin commands in arbitrary ways.
+dev:
+	podman pod inspect worldmaster-dev >/dev/null 2>&1 || \
+		podman kube play ./containers/kube/dev.yml
+	podman container exec -it worldmaster-dev-dev /bin/bash -il
 
-	cmd = [
-		environ.get('DOCKER', 'podman'), 'container', 'run', '--rm',
-		'--security-opt', 'label=disable',
-		'-d' if args.background else '-it',
-		'--userns', 'keep-id',
-		'--user', f'{getuid()}:{getgid()}',
-		'--env', 'venv=/mnt/venv',
-		'--env', 'HOME=/mnt/home',
-		'--mount', 'type=volume,source=worldmaster-venv,destination=/mnt/venv',
-		'--mount', 'type=volume,source=worldmaster-home,destination=/mnt/home',
-		'--mount', 'type=bind,source=.,destination=/mnt/source,ro=true',
-	]
+# Run makemigrations in the dev pod.
+makemigrations:
+	podman pod inspect worldmaster-dev >/dev/null 2>&1 || \
+		podman kube play ./containers/kube/dev.yml
+	podman container exec -it worldmaster-dev-dev /opt/worldmaster/venv/bin/django-admin makemigrations
 
-	for name in read_only:
-		cmd += [
-			'--mount',
-			f'type=bind,source=./{name},destination=/mnt/source/{name},ro=true',
-		]
+# Run shell_plus in the dev pod.
+shell_plus:
+	podman pod inspect worldmaster-dev >/dev/null 2>&1 || \
+		podman kube play ./containers/kube/dev.yml
+	podman container exec -it worldmaster-dev-dev /opt/worldmaster/venv/bin/django-admin shell_plus
 
-	for name in writable:
-		cmd += [
-			'--mount',
-			f'type=bind,source=./{name},destination=/mnt/source/{name},ro=false',
-		]
+# Tear down the django pod.
+down-django:
+	podman kube down ./containers/kube/django.yml
 
-	if args.name is not None:
-		cmd += ['--replace', '--name', args.name]
+# Tear down the watchtsc pod.
+down-watchtsc:
+	podman kube down ./containers/kube/watchtsc.yml
 
-	port = args.port
-	if port:
-		cmd.append('--publish')
-
-		if len(port) == 1:
-			port *= 2
-
-		cmd.append(':'.join(map(str, port)))
-
-	cmd += args.container_arg
-
-	cmd += [
-		'docker.io/worldmasterttrpg/worldmaster:development',
-		args.entrypoint,
-	] + args.args
-
-	print(f'executing {join(cmd)}')
-	execvp(cmd[0], cmd)
-
-# Runs django `manage.py shell_plus`
-shell: (development 'shell_plus')
-
-# Runs django `manage.py runserver` in the background
-runserver: (development '-bp8000' '-nworldmaster-django' 'runserver' '0.0.0.0:8000')
-
-# Runs django `manage.py makemigrations`
-makemigrations: (
-	development
-	'-w' 'src/roles/migrations'
-	'-w' 'src/wiki/migrations'
-	'-w' 'src/worldmaster/migrations'
-	'-w' 'src/worlds/migrations'
-	'makemigrations'
-)
-
-
-# Creates a dev:dev superuser
-createsuperuser username='dev' password='dev': (
-	development
-	('-a-eDJANGO_SUPERUSER_PASSWORD=' + password)
-	'--' 'createsuperuser'
-	'--username' username
-	'--email' 'dev@worldmaster.test'
-	'--noinput'
-)
-
-# Creates a dev:dev superuser
-createuser username password='': (
-	development
-	('-a-eusername=' + username)
-	("-a-epassword=" + password)
-	'--' 'shell'
-	'-c' '''
-from worldmaster.models import User
-from getpass import getpass
-from os import environ
-username = environ["username"]
-User.objects.create_user(
-	username = username,
-	password = environ.get("password") or getpass(),
-	email = f"{username}@worldmaster.test",
-)
-'''
-)
-
-# This technically mounts more things than need to be mounted, because the tsc
-# watcher doesn't need the db or anything.  We'll live with that for now.
-
-# Runs watchexec on tsc files in the background.
-watchtsc: (development '-bnworldmaster-tsc' '-E/mnt/source/oci/tsc.sh' '-wstatic')
-
-# Runs django manage.py dumpdata 
-dumpdata: (development '-E/mnt/source/oci/dumpdata.sh' '-wfixtures')
-
-clean:
-	-"{{DOCKER}}" container stop -i worldmaster-tsc worldmaster-django
-	-"{{DOCKER}}" volume rm -f worldmaster-venv worldmaster-home
-	-rm -r dev/*
+# Tear down the dev pod.
+down-dev:
+	podman kube down ./containers/kube/dev.yml
