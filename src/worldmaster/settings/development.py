@@ -19,9 +19,9 @@ DATABASES = {
 }
 
 STATICFILES_DIRS = [
-    environ.get('worldmaster_static', PROJECT_ROOT / 'static'),
+    environ.get('WORLDMASTER_STATIC', PROJECT_ROOT / 'static'),
 ]
 
 FIXTURE_DIRS = [
-    environ.get('worldmaster_fixture', PROJECT_ROOT / 'fixtures'),
+    environ.get('WORLDMASTER_FIXTURE', PROJECT_ROOT / 'fixtures'),
 ]

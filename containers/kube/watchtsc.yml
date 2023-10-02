@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: worldmaster-static
+spec:
+  accessModes:
+    - ReadWriteOnce
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worldmaster-watchtsc
+spec:
+  containers:
+    - name: watchtsc
+      image: 'docker.io/worldmasterttrpg/worldmaster:development'
+      volumeMounts:
+        - mountPath: /opt/worldmaster/work
+          name: workdir
+        - mountPath: /opt/worldmaster/static
+          name: static
+      env:
+        - name: WORLDMASTER_STATIC
+          value: /opt/worldmaster/static
+      workingDir: /opt/worldmaster/work
+      securityContext:
+        seLinuxOptions:
+          type: spc_t
+      args:
+        - ./containers.tsc.sh
+  volumes:
+    - name: static
+      persistentVolumeClaim:
+        claimName: worldmaster-static
+    - name: workdir
+      hostPath:
+        path: .
