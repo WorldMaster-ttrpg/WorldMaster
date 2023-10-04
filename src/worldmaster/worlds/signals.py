@@ -1,10 +1,15 @@
+from contextlib import suppress
 from typing import Any, TypeVar
+
 from django.db import models
-from django.db.models.signals import post_save, pre_save, post_delete
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
-from .models import Player, World, Plane, Entity, Event
-from worldmaster.wiki.models import Article
+
 from worldmaster.roles.models import Role, RoleTarget
+from worldmaster.wiki.models import Article
+
+from .models import Entity, Event, Plane, Player, World
+
 
 @receiver(pre_save, sender=World)
 def add_world_article_and_share_role_target(
@@ -13,14 +18,13 @@ def add_world_article_and_share_role_target(
     raw: bool,
     **kwargs: Any,
 ) -> None:
-    '''Add the article where appropriate, and set up the role_target to share.
-    '''
-    if not raw and instance.pk is None and not hasattr(instance, 'article'):
+    """Add the article where appropriate, and set up the role_target to share."""
+    if not raw and instance.pk is None and not hasattr(instance, "article"):
         article = Article.objects.create()
         instance.article = article
         instance.role_target = article.role_target
 
-PlaneEntityEvent = TypeVar('PlaneEntityEvent', Plane, Entity, Event)
+PlaneEntityEvent = TypeVar("PlaneEntityEvent", Plane, Entity, Event)
 
 @receiver(pre_save, sender=Plane)
 @receiver(pre_save, sender=Entity)
@@ -31,24 +35,24 @@ def add_nonworld_article_and_share_role_target(
     raw: bool,
     **kwargs: Any,
 ) -> None:
-    '''Add the article where appropriate, and set up the role_target to share.
+    """Add the article where appropriate, and set up the role_target to share.
 
     This also sets up the RoleTarget parent as expected.
 
     Note that the role_target parent of all these objects is the World alone.
     An entity exists in a plane, but it may also cross planes, so it only makes
     sense for its parent to be the world.
-    '''
-    if not raw and instance.pk is None and not hasattr(instance, 'article'):
+    """
+    if not raw and instance.pk is None and not hasattr(instance, "article"):
         article = Article.objects.create(
             role_target=RoleTarget.objects.create(
                 parent=instance.world.role_target,
-            )
+            ),
         )
         instance.article = article
         instance.role_target = article.role_target
 
-WorldPlaneEntityEvent = TypeVar('WorldPlaneEntityEvent', World, Plane, Entity, Event)
+WorldPlaneEntityEvent = TypeVar("WorldPlaneEntityEvent", World, Plane, Entity, Event)
 
 @receiver(post_delete, sender=World)
 @receiver(post_delete, sender=Plane)
@@ -59,13 +63,10 @@ def delete_role_target(
     instance: WorldPlaneEntityEvent,
     **kwargs: Any,
 ) -> None:
-    '''Delete the role_target where appropriate and possible.
-    '''
-    try:
+    """Delete the role_target where appropriate and possible."""
+    # Something else may be using the role_target.
+    with suppress(models.RestrictedError):
         instance.role_target.delete()
-    except models.RestrictedError:
-        # Something else is using the role_target.
-        pass
 
 @receiver(post_delete, sender=World)
 @receiver(post_delete, sender=Plane)
@@ -76,8 +77,7 @@ def delete_article(
     instance: WorldPlaneEntityEvent,
     **kwargs: Any,
 ) -> None:
-    '''Delete the article.
-    '''
+    """Delete the article."""
     instance.article.delete()
 
 @receiver(post_save, sender=Player)
@@ -88,13 +88,12 @@ def add_viewer_role_to_player(
     raw: bool,
     **kwargs,
 ):
-    '''Make sure that any player on a world has view access to at least that world.
-    '''
+    """Make sure that any player on a world has view access to at least that world."""
     if not raw:
         kwargs = {
-            'target': instance.world.role_target,
-            'type': Role.Type.VIEWER,
-            'user_id': instance.user.id,
+            "target": instance.world.role_target,
+            "type": Role.Type.VIEWER,
+            "user_id": instance.user.id,
         }
 
         if not Role.objects.filter(**kwargs).exists():

@@ -1,34 +1,37 @@
-from typing import cast, TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
+
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase
-from roles.models import RoleTarget, Role
-from django.contrib.auth import get_user_model
-from worlds.models import World, Plane
-from wiki.models import Article
+from worldmaster.roles.models import Role, RoleTarget
+from worldmaster.wiki.models import Article
+from worldmaster.worlds.models import Plane, World
 
 if TYPE_CHECKING:
-    from worldmaster import models as worldmaster
+    from worldmaster.worldmaster import models as worldmaster
 
-User = cast(type['worldmaster.User'], get_user_model())
+User = cast(type["worldmaster.User"], get_user_model())
 
 class RoleTestCase(TestCase):
     def setUp(self) -> None:
-        self.user = User.objects.create(username='test')
+        self.user = User.objects.create(username="test")
         self.user.set_unusable_password()
 
         self.anonymous_user = AnonymousUser()
 
-        self.other_user = User.objects.create(username='othertest')
+        self.other_user = User.objects.create(username="othertest")
         self.other_user.set_unusable_password()
 
         self.world = World.objects.create(
-            slug='world',
-            name='World',
+            slug="world",
+            name="World",
         )
         self.plane = Plane.objects.create(
             world=self.world,
-            slug='plane',
-            name='Plane',
+            slug="plane",
+            name="Plane",
         )
         self.article: Article = self.plane.article
 
@@ -46,18 +49,18 @@ class RoleTestCase(TestCase):
         self.assertTrue(
             self.article_target.user_is_master(
                 user=self.user,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_master(
                 user=self.other_user,
-            )
+            ),
         )
 
         self.assertFalse(
             self.article_target.user_is_master(
                 user=self.anonymous_user,
-            )
+            ),
         )
 
         self.assertIn(self.world, World.objects.mastered_by(self.user))
@@ -90,7 +93,7 @@ class RoleTestCase(TestCase):
                     self.plane_target.user_is_role(
                         user=self.user,
                         type=type,
-                    )
+                    ),
                 )
                 self.assertIn(self.world, World.objects.with_role(self.user, type))
                 self.assertNotIn(self.world, World.objects.with_role(self.other_user, type))
@@ -103,7 +106,7 @@ class RoleTestCase(TestCase):
                 self.assertNotIn(self.article, Article.objects.with_role(self.user, type))
                 self.assertNotIn(self.article, Article.objects.with_role(self.other_user, type))
                 self.assertNotIn(self.article, Article.objects.with_role(self.anonymous_user, type))
-        
+
     def test_master_implied(self):
         Role.objects.create(
             target=self.article_target,
@@ -115,56 +118,56 @@ class RoleTestCase(TestCase):
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertIn(self.article, Article.objects.mastered_by(self.user))
         self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
@@ -187,56 +190,56 @@ class RoleTestCase(TestCase):
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertIn(self.article, Article.objects.mastered_by(self.user))
@@ -260,56 +263,56 @@ class RoleTestCase(TestCase):
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertNotIn(self.article, Article.objects.mastered_by(self.user))
         self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
@@ -332,56 +335,56 @@ class RoleTestCase(TestCase):
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertNotIn(self.article, Article.objects.mastered_by(self.user))
         self.assertNotIn(self.article, Article.objects.mastered_by(self.other_user))
@@ -403,18 +406,18 @@ class RoleTestCase(TestCase):
         self.assertTrue(
             self.article_target.user_is_master(
                 user=self.user,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_master(
                 user=self.other_user,
-            )
+            ),
         )
 
         self.assertTrue(
             self.article_target.user_is_master(
                 user=self.anonymous_user,
-            )
+            ),
         )
         self.assertIn(self.article, Article.objects.mastered_by(self.user))
         self.assertIn(self.article, Article.objects.mastered_by(self.other_user))
@@ -444,13 +447,13 @@ class RoleTestCase(TestCase):
                     self.plane_target.user_is_role(
                         user=self.user,
                         type=type,
-                    )
+                    ),
                 )
                 self.assertFalse(
                     self.article_target.user_is_role(
                         user=self.user,
                         type=type,
-                    )
+                    ),
                 )
                 self.assertIn(self.world, World.objects.with_role(self.user, type))
                 self.assertIn(self.world, World.objects.with_role(self.other_user, type))
@@ -463,7 +466,7 @@ class RoleTestCase(TestCase):
                 self.assertNotIn(self.article, Article.objects.with_role(self.user, type))
                 self.assertNotIn(self.article, Article.objects.with_role(self.other_user, type))
                 self.assertNotIn(self.article, Article.objects.with_role(self.anonymous_user, type))
-        
+
     def test_anonymous_master_implied(self):
         Role.objects.create(
             target=self.article_target,
@@ -475,56 +478,56 @@ class RoleTestCase(TestCase):
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertIn(self.article, Article.objects.mastered_by(self.user))
         self.assertIn(self.article, Article.objects.mastered_by(self.other_user))
@@ -547,56 +550,56 @@ class RoleTestCase(TestCase):
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertIn(self.article, Article.objects.mastered_by(self.user))
@@ -620,56 +623,56 @@ class RoleTestCase(TestCase):
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertNotIn(self.article, Article.objects.mastered_by(self.user))
@@ -693,55 +696,55 @@ class RoleTestCase(TestCase):
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.other_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.MASTER,
-            )
+            ),
         )
         self.assertFalse(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.EDITOR,
-            )
+            ),
         )
         self.assertTrue(
             self.article_target.user_is_role(
                 user=self.anonymous_user,
                 type=Role.Type.VIEWER,
-            )
+            ),
         )
 
         self.assertNotIn(self.article, Article.objects.mastered_by(self.user))
@@ -770,5 +773,5 @@ class RoleTestCase(TestCase):
 
         self.assertEqual(
             Plane.objects.visible_to(self.user).count(),
-            1
+            1,
         )

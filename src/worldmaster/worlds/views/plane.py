@@ -1,84 +1,87 @@
 from __future__ import annotations
-from typing import Any, cast
-from django.contrib.auth.models import AbstractUser, AnonymousUser
 
-from django.db import transaction
-from django.http import HttpResponse
-from django.urls import reverse
-from django.views.generic import CreateView, ListView, DetailView, UpdateView
+from typing import TYPE_CHECKING, Any, cast
+
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import AbstractUser, AnonymousUser
+from django.db import transaction
+from django.urls import reverse
+from django.views.generic import CreateView, DetailView, ListView, UpdateView
+
 from worldmaster.roles.models import Role
-from worldmaster.worlds.models import World, Plane
 from worldmaster.worlds.forms import PlaneForm
+from worldmaster.worlds.models import Plane, World
+
+if TYPE_CHECKING:
+    from django.http import HttpResponse
+
 
 class PlanesView(ListView):
     model = Plane
-    template_name = 'worlds/plane/index.html'
+    template_name = "worlds/plane/index.html"
 
     def setup(self, request, *args, world_slug, **kwargs) -> None:
         super().setup(request, *args, world_slug=world_slug, **kwargs)
         self.__world = World.objects.visible_to(
-            cast(AbstractUser | AnonymousUser, self.request.user)
+            cast(AbstractUser | AnonymousUser, self.request.user),
         ).filter(slug=world_slug).get()
 
     def get_queryset(self):
-        '''Get planes in this world visible to this user.
-        '''
+        """Get planes in this world visible to this user."""
         return Plane.objects.visible_to(
-            cast(AbstractUser | AnonymousUser, self.request.user)
+            cast(AbstractUser | AnonymousUser, self.request.user),
         ).filter(world=self.__world)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data()
-        context['world'] = self.__world
+        context["world"] = self.__world
         return context
 
 class PlaneView(DetailView):
     model = Plane
-    template_name = 'worlds/plane/detail.html'
-    slug_url_kwarg = 'plane_slug'
+    template_name = "worlds/plane/detail.html"
+    slug_url_kwarg = "plane_slug"
 
     def setup(self, request, *args, world_slug, **kwargs) -> None:
         super().setup(request, *args, world_slug=world_slug, **kwargs)
         self.__world = World.objects.visible_to(
-            cast(AbstractUser | AnonymousUser, self.request.user)
+            cast(AbstractUser | AnonymousUser, self.request.user),
         ).filter(slug=world_slug).get()
 
     def get_queryset(self):
-        '''Get planes in this world visible to this user.
-        '''
+        """Get planes in this world visible to this user."""
         return Plane.objects.visible_to(
-            cast(AbstractUser | AnonymousUser, self.request.user)
+            cast(AbstractUser | AnonymousUser, self.request.user),
         ).filter(world=self.__world)
 
 class NewPlaneView(LoginRequiredMixin, CreateView):
     model = Plane
     form_class = PlaneForm
-    template_name = 'worlds/plane/new.html'
+    template_name = "worlds/plane/new.html"
 
     object: Plane
 
     def get_form(self, form_class=None) -> PlaneForm:
         form: PlaneForm = super().get_form(form_class)
         form.instance.world = World.objects.editable_by(
-            cast(AbstractUser | AnonymousUser, self.request.user)
-        ).filter(slug=self.kwargs['world_slug']).get()
+            cast(AbstractUser | AnonymousUser, self.request.user),
+        ).filter(slug=self.kwargs["world_slug"]).get()
 
         return form
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         data = super().get_context_data(**kwargs)
-        data['action'] = reverse('worlds:new-plane', kwargs={
-            'world_slug': self.kwargs['world_slug'],
+        data["action"] = reverse("worlds:new-plane", kwargs={
+            "world_slug": self.kwargs["world_slug"],
         })
         return data
 
     def form_valid(self, form: PlaneForm) -> HttpResponse:
         response = super().form_valid(form)
         kwargs = {
-            'user': self.request.user,
-            'type': Role.Type.EDITOR,
-            'target': self.object.role_target,
+            "user": self.request.user,
+            "type": Role.Type.EDITOR,
+            "target": self.object.role_target,
         }
         if not Role.objects.filter(**kwargs).exists():
             Role.objects.create(**kwargs)
@@ -89,25 +92,23 @@ class NewPlaneView(LoginRequiredMixin, CreateView):
         return super().post(*args, **kwargs)
 
 class EditPlaneView(LoginRequiredMixin, UpdateView):
-    template_name = 'worlds/plane/edit.html'
+    template_name = "worlds/plane/edit.html"
     model = Plane
-    slug_url_kwarg = 'plane_slug'
+    slug_url_kwarg = "plane_slug"
     form_class = PlaneForm
-    template_name = 'worlds/plane/edit.html'
     object: Plane
 
     def get_queryset(self):
-        '''Get planes in this world visible to this user.
-        '''
+        """Get planes in this world visible to this user."""
         return Plane.objects.visible_to(
-            cast(AbstractUser | AnonymousUser, self.request.user)
-        ).filter(world__slug=self.kwargs['world_slug'])
+            cast(AbstractUser | AnonymousUser, self.request.user),
+        ).filter(world__slug=self.kwargs["world_slug"])
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         data = super().get_context_data(**kwargs)
-        data['action'] = reverse('worlds:edit-plane', kwargs={
-            'world_slug': self.kwargs['world_slug'],
-            'plane_slug': self.kwargs['plane_slug'],
+        data["action"] = reverse("worlds:edit-plane", kwargs={
+            "world_slug": self.kwargs["world_slug"],
+            "plane_slug": self.kwargs["plane_slug"],
         })
         return data
 

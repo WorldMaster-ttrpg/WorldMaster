@@ -20,6 +20,35 @@ kind: Pod
 metadata:
   name: worldmaster-dev
 spec:
+  initContainers:
+    - name: init-dev
+      image: 'docker.io/worldmasterttrpg/worldmaster:development'
+      volumeMounts:
+        - mountPath: /opt/worldmaster/work
+          name: workdir
+        - mountPath: /opt/worldmaster/venv
+          name: venv
+        - mountPath: /opt/worldmaster/static
+          name: static
+      env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: worldmaster.worldmaster.settings.development
+        - name: VENV
+          value: /opt/worldmaster/venv
+        - name: WORLDMASTER_STATIC
+          value: /opt/worldmaster/static
+      workingDir: /opt/worldmaster/work
+
+      # Disable SELinux security label isolation, otherwise bind mounts don't work.
+      securityContext:
+        seLinuxOptions:
+          type: spc_t
+      command:
+        - /bin/sh
+        - -c
+      args:
+        - |
+          "$VENV/bin/pip" install -e '.[dev]'
   containers:
     - name: dev
       image: 'docker.io/worldmasterttrpg/worldmaster:development'
