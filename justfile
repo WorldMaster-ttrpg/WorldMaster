@@ -1,4 +1,5 @@
 set positional-arguments
+set ignore-comments
 
 _list:
 	@just --list
@@ -28,29 +29,29 @@ down:
 
 # Run the django pod, which runs `runserver`.
 django:
-	podman kube play ./containers/kube/django.yml
+	podman pod inspect worldmaster-django >/dev/null 2>&1 || \
+		podman kube play ./containers/kube/django.yml
 
 # Run the watchtsc pod, which compiles typescript to js on all changes into the shared static volume.
 watchtsc:
-	podman kube play ./containers/kube/watchtsc.yml
+	podman pod inspect worldmaster-watchtsc >/dev/null 2>&1 || \
+		podman kube play ./containers/kube/watchtsc.yml
 
-# Start up a dev pod and run a shell on it with the venv activated.  This is usefull for running arbitrary django-admin commands in arbitrary ways.
+# Start up the dev pod.  This is like the django pod, but just sets up the venv and drops you into a shell.
 dev:
 	podman pod inspect worldmaster-dev >/dev/null 2>&1 || \
 		podman kube play ./containers/kube/dev.yml
+
+# Run a shell on the dev pod.
+dev-shell: dev
 	podman container exec -it worldmaster-dev-dev /bin/bash -il
 
-# Run makemigrations in the dev pod.
-makemigrations:
-	podman pod inspect worldmaster-dev >/dev/null 2>&1 || \
-		podman kube play ./containers/kube/dev.yml
-	podman container exec -it worldmaster-dev-dev /opt/worldmaster/venv/bin/django-admin makemigrations
+# Run a django-admin command on the dev pod.
+django-admin *args: dev
+	podman container exec -it worldmaster-dev-dev /opt/worldmaster/venv/bin/django-admin "$@"
 
-# Run shell_plus in the dev pod.
-shell_plus:
-	podman pod inspect worldmaster-dev >/dev/null 2>&1 || \
-		podman kube play ./containers/kube/dev.yml
-	podman container exec -it worldmaster-dev-dev /opt/worldmaster/venv/bin/django-admin shell_plus
+test: (django-admin 'test')
+makemigrations: (django-admin 'makemigrations')
 
 # Tear down the django pod.
 down-django:
