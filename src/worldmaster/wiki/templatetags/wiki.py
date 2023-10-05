@@ -4,8 +4,5 @@ from django import template
 
 register = template.Library()
 
-@register.filter
-def json(value):
-    """Encode to json."""
-    dumps(value, indent=2)
+json = register.simple_tag(name="json")(dumps)
 

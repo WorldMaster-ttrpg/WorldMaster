@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib.auth import get_user_model
@@ -50,12 +51,12 @@ class Article(RoleTargetBase, models.Model):
 
         section_set = self.sections.all()
 
-        for id, order, text in zip(section_ids, section_orders, sections, strict=True):
+        for id, order, body in zip(section_ids, section_orders, sections, strict=True):
             section: Section
             if id is None:
                 section = section_set.create(
                     order=order,
-                    text=text,
+                    body=json.loads(body),
                     article=self,
                 )
 

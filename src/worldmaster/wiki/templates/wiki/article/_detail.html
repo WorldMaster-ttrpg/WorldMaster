@@ -2,7 +2,9 @@
 <article class="wiki article">
   {% for section in object.sections.all %}
     <section>
-      {{ section.body|json }}
+      <pre>
+{% json section.body indent=2 %}
+      </pre>
     </section>
   {% endfor %}
 </article>

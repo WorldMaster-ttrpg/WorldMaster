@@ -4,7 +4,7 @@
 <script async type="module" src="{% static 'wiki/js/edit-wiki.js' %}"></script>
 {% endaddtoblock %}
 
-<fieldset>
+<fieldset class="wiki">
   <legend>Wiki</legend>
   <ul>
     {% for section in object.sections.all %}
