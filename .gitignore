@@ -125,3 +125,6 @@ dmypy.json
 !/static/.keep
 /dev/*
 !/dev/.keep
+
+# The static code will always be typescript.  We don't commit js
+/src/worldmaster/*/static/js/*.js

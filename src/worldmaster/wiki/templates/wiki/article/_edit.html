@@ -1,10 +1,10 @@
-{% load static sekizai_tags %}
+{% load static sekizai_tags wiki %}
 
 {% addtoblock "head" %}
-<script async type="module" src="{% static 'wiki/wiki.js' %}"></script>
+<script async type="module" src="{% static 'wiki/js/edit-wiki.js' %}"></script>
 {% endaddtoblock %}
 
-<fieldset>
+<fieldset class="wiki">
   <legend>Wiki</legend>
   <ul>
     {% for section in object.sections.all %}
@@ -13,7 +13,7 @@
     <li>
       <input type="hidden" name="wiki-section-id" value="{{ section.id }}">
       <input type="hidden" name="wiki-section-order" value="{{ section.order }}">
-      <textarea name="wiki-section">{{ section.text }}</textarea>
+      {{ section.body|json }}
       <button type="button" class="delete-section">🗑️</button>
     </li>
     {% endfor %}

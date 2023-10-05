@@ -16,6 +16,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 
 """
+from django.conf import settings
 from django.contrib import admin
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.urls import include, path, reverse
@@ -27,9 +28,20 @@ def redirect_to_worlds(request: HttpRequest) -> HttpResponse:
 
 app_name = "worldmaster"
 
-urlpatterns = [
+urlpatterns = (
     path("", redirect_to_worlds),
     path("admin/", admin.site.urls),
     path("worlds/", include("worldmaster.worlds.urls")),
     path("accounts/", include(("django.contrib.auth.urls", "auth"))),
-]
+)
+
+if settings.DEBUG:
+    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+
+    # Serve static and media files from development server
+    urlpatterns = (
+        *urlpatterns,
+        *staticfiles_urlpatterns(),
+    )
+
+

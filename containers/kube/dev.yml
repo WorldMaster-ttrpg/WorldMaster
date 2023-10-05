@@ -8,14 +8,6 @@ spec:
     - ReadWriteOnce
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: worldmaster-static
-spec:
-  accessModes:
-    - ReadWriteOnce
----
-apiVersion: v1
 kind: Pod
 metadata:
   name: worldmaster-dev
@@ -28,15 +20,11 @@ spec:
           name: workdir
         - mountPath: /opt/worldmaster/venv
           name: venv
-        - mountPath: /opt/worldmaster/static
-          name: static
       env:
         - name: DJANGO_SETTINGS_MODULE
           value: worldmaster.worldmaster.settings.development
         - name: VENV
           value: /opt/worldmaster/venv
-        - name: WORLDMASTER_STATIC
-          value: /opt/worldmaster/static
       workingDir: /opt/worldmaster/work
 
       # Disable SELinux security label isolation, otherwise bind mounts don't work.
@@ -57,15 +45,11 @@ spec:
           name: workdir
         - mountPath: /opt/worldmaster/venv
           name: venv
-        - mountPath: /opt/worldmaster/static
-          name: static
       env:
         - name: DJANGO_SETTINGS_MODULE
           value: worldmaster.worldmaster.settings.development
         - name: VENV
           value: /opt/worldmaster/venv
-        - name: WORLDMASTER_STATIC
-          value: /opt/worldmaster/static
       workingDir: /opt/worldmaster/work
 
       # Disable SELinux security label isolation, otherwise bind mounts don't work.
@@ -87,9 +71,6 @@ spec:
     - name: venv
       persistentVolumeClaim:
         claimName: worldmaster-venv
-    - name: static
-      persistentVolumeClaim:
-        claimName: worldmaster-static
     - name: workdir
       hostPath:
         path: .

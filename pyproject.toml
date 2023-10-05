@@ -20,7 +20,6 @@ dependencies = [
   'django-stubs >= 1.13.1, < 2',
   'ptpython >= 3.0.22',
   'Werkzeug >= 2.2.2, < 3.0.0',
-  'markdown >= 3.4.1, < 4',
   'django-sekizai >= 4.0.0, < 5',
 ]
 

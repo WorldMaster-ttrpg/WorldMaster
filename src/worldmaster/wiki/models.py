@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.shortcuts import get_object_or_404
-
 from worldmaster.roles.models import Role, RoleTargetBase, RoleTargetManager
 
 if TYPE_CHECKING:
@@ -28,9 +28,10 @@ class Article(RoleTargetBase, models.Model):
 
     objects: RoleTargetManager[Article] = RoleTargetManager()
 
+    # FIXME
     def body_text(self) -> str:
         """Get the joined text of all the sections of this article."""
-        return "\n\n".join(section.text for section in self.sections.order_by("order"))
+        return "\n\n".join(str(section.body) for section in self.sections.order_by("order"))
 
     def update_sections(self, user: AbstractUser | AnonymousUser, data: QueryDict):
         """Update this article's sections using a POST dictionary."""
@@ -50,12 +51,12 @@ class Article(RoleTargetBase, models.Model):
 
         section_set = self.sections.all()
 
-        for id, order, text in zip(section_ids, section_orders, sections, strict=True):
+        for id, order, body in zip(section_ids, section_orders, sections, strict=True):
             section: Section
             if id is None:
                 section = section_set.create(
                     order=order,
-                    text=text,
+                    body=json.loads(body),
                     article=self,
                 )
 
@@ -71,7 +72,7 @@ class Article(RoleTargetBase, models.Model):
             else:
                 section = get_object_or_404(Section, id=id)
                 if section.role_target.user_is_editor(user):
-                    section.text = text
+                    section.body = text
                     section.order = order
                     section.save()
 
@@ -92,7 +93,12 @@ class Section(RoleTargetBase, models.Model):
         related_query_name="section",
     )
 
-    text = models.TextField(blank=False, null=False, help_text="Markdown text")
+    body = models.JSONField(
+        blank=False,
+        null=False,
+        help_text="Article section content",
+        default=list,
+    )
 
     # Order is in a range from 0 to the number of sections on the article.
     # Clients might not be able to see all the sections, but can still do
@@ -102,10 +108,10 @@ class Section(RoleTargetBase, models.Model):
     objects: RoleTargetManager[Section] = RoleTargetManager()
 
     def __str__(self):
-        return self.text
+        return str(self.body)
 
     def __repr__(self):
-        return f"<Section: {self.text!r}>"
+        return f"<Section: {self.body!r}>"
 
     class Meta(RoleTargetBase.Meta):
         indexes = [

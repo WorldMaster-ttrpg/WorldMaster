@@ -72,3 +72,4 @@ for (const delete_section_button of document.querySelectorAll('fieldset.wiki .de
 }
 
 export {}
+
