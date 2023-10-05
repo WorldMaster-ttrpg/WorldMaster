@@ -71,4 +71,7 @@ for (const delete_section_button of document.querySelectorAll('fieldset.wiki .de
   delete_section_button.addEventListener('click', (event) => delete_section(event.target as HTMLButtonElement));
 }
 
+console.log('could change again 3');
+
 export {}
+

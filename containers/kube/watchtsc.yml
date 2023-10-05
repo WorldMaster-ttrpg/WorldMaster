@@ -18,21 +18,13 @@ spec:
       volumeMounts:
         - mountPath: /opt/worldmaster/work
           name: workdir
-        - mountPath: /opt/worldmaster/static
-          name: static
-      env:
-        - name: WORLDMASTER_STATIC
-          value: /opt/worldmaster/static
       workingDir: /opt/worldmaster/work
       securityContext:
         seLinuxOptions:
           type: spc_t
       args:
-        - ./containers.tsc.sh
+        - ./containers/tsc.sh
   volumes:
-    - name: static
-      persistentVolumeClaim:
-        claimName: worldmaster-static
     - name: workdir
       hostPath:
         path: .

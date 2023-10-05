@@ -1,5 +1,8 @@
-{% load markdown %}
-
+{% load wiki %}
 <article class="wiki article">
-  {{ object.body_text | markdown }}
+  {% for section in object.sections.all %}
+    <section>
+      {{ section.body|json }}
+    </section>
+  {% endfor %}
 </article>
