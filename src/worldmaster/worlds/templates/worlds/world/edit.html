@@ -2,11 +2,6 @@
 
 {% load static %}
 
-{% block head %}
-{{ block.super }}
-<script async type="module" src="{% static 'worlds/js/edit-players.js' %}"></script>
-{% endblock %}
-
 {% block extra %}
 {% include "wiki/article/_edit.html" with object=object.article %}
 

@@ -1,4 +1,4 @@
-{% load sekizai_tags %}
+{% load sekizai_tags static %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -7,6 +7,7 @@
   <title>{% block title %}WorldMaster{% endblock %}</title>
   {% block head %}{% endblock %}
   {% render_block "head" %}
+  <script async type="module" src="{% static 'js/bundle.js' %}"></script>
 </head>
 
 <body>

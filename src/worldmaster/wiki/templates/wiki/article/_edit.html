@@ -1,11 +1,5 @@
 {% load static sekizai_tags wiki %}
 
-{% addtoblock "head" %}
-<script async type="module" src="{% static 'wiki/js/edit-wiki.js' %}"></script>
-<script src="//cdn.quilljs.com/1.3.7/quill.min.js"></script>
-<link href="//cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-{% endaddtoblock %}
-
 <fieldset class="wiki">
   <legend>Wiki</legend>
   <ul>
@@ -15,9 +9,8 @@
     <li>
       <input type="hidden" name="wiki-section-id" value="{{ section.id }}">
       <input type="hidden" name="wiki-section-order" value="{{ section.order }}">
-      <textarea name="wiki-section">
-{% json section.body indent=2 %}
-      </textarea>
+      <div name="wiki-section" class="wiki-section" data="{% json section.body %}">
+      </div>
       <button type="button" class="delete-section">🗑️</button>
     </li>
     {% endfor %}

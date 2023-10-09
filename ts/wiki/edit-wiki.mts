@@ -1,3 +1,6 @@
+import { Editor } from '@tiptap/core'
+import StarterKit from '@tiptap/starter-kit'
+
 function get_order_from_li(li: Element | null): number | null {
   if (li === null) {
     return null;
@@ -69,6 +72,16 @@ for (const add_section_button of document.querySelectorAll('fieldset.wiki .add-s
 
 for (const delete_section_button of document.querySelectorAll('fieldset.wiki .delete-section')) {
   delete_section_button.addEventListener('click', (event) => delete_section(event.target as HTMLButtonElement));
+}
+
+for (const wiki_section of document.querySelectorAll('.wiki-section')) {
+  new Editor({
+    element: wiki_section,
+    extensions: [
+      StarterKit,
+    ],
+    content: '<p>Hello World!</p>',
+  });
 }
 
 export {}

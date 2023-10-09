@@ -120,11 +120,31 @@ dmypy.json
 # Don't add raw js files.  JS files will always be the result of a compilation
 # or a vendoring in.
 *.js
+*.mjs
 
-/static/*
-!/static/.keep
+/static/js/*
+!/static/js/.keep
 /dev/*
 !/dev/.keep
 
 # The static code will always be typescript.  We don't commit js
 /src/worldmaster/*/static/js/*.js
+
+# For zero-install, we might want to eventually uncomment these.
+# .yarn/*
+# !.yarn/cache
+# !.yarn/patches
+# !.yarn/plugins
+# !.yarn/releases
+# !.yarn/sdks
+# !.yarn/versions
+
+
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+out-tsc
