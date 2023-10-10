@@ -40,6 +40,7 @@ export class WikiEditor {
     form.addEventListener('submit', () => {
       for (const editor of this.editors) {
         if (!editor.disabled) {
+          console.log('updating editor');
           editor.update();
         }
       }
@@ -54,6 +55,9 @@ export class WikiEditor {
     return Number(order_input.value);
   }
 
+  /**
+  * Create a new section and insert it in the place of the button.
+  */
   #add_section(button: HTMLButtonElement) {
     const add_section_li = button.parentElement as HTMLLIElement;
     const prev_section_order = WikiEditor.#get_order_from_section(add_section_li.previousElementSibling);
@@ -98,15 +102,16 @@ export class WikiEditor {
 
     const section_body = section_li.appendChild(document.createElement('input'));
     section_body.hidden = true;
+    section_body.value = '';
     section_body.name = 'wiki-section-body';
     section_body.classList.add('body');
 
     const delete_button = section_li.appendChild(document.createElement('button'));
     delete_button.type = 'button';
     delete_button.textContent = '🗑️';
-    delete_button.classList.add('section');
+    delete_button.classList.add('delete');
 
-    add_section_li.parentElement?.insertBefore(section_li, fragment);
+    add_section_li.parentElement?.insertBefore(fragment, add_section_li);
 
     this.editors.add(new SectionEditor(section_li));
   }

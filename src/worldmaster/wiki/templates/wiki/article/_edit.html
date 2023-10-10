@@ -9,7 +9,7 @@
     <li class="section">
       <input type="hidden" name="wiki-section-id" class="id" value="{{ section.id }}">
       <input type="hidden" name="wiki-section-order" class="order" value="{{ section.order }}">
-      <input type="hidden" name="wiki-section-body" class="body" value="{{ section.body }}">
+      <input type="hidden" name="wiki-section-body" class="body" value="{% json section.body %}">
       <button type="button" class="delete">🗑️</button>
     </li>
     {% endfor %}

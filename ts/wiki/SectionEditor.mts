@@ -1,4 +1,4 @@
-import { Editor } from '@tiptap/core';
+import { Editor, EditorOptions } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
 export class SectionEditor {
@@ -29,13 +29,17 @@ export class SectionEditor {
     this.#editor_div = document.createElement('div');
     this.#editor_div.classList.add('editor');
     this.#body.insertAdjacentElement('afterend', this.#editor_div);
-    this.#editor = new Editor({
+    let options: Partial<EditorOptions> = {
       element: this.#editor_div,
       extensions: [
         StarterKit,
       ],
-      content: JSON.parse(this.#body.value),
-    });
+    };
+    if (this.#body.value) {
+      options.content = JSON.parse(this.#body.value);
+    }
+
+    this.#editor = new Editor(options);
 
     this.#delete_button = section.querySelector('button.delete') as HTMLButtonElement;
 
@@ -46,5 +50,6 @@ export class SectionEditor {
 
   update() {
     this.#body.value = JSON.stringify(this.#editor.getJSON());
+    console.log('body value: ', this.#body.value);
   }
 }

@@ -43,7 +43,7 @@ class Article(RoleTargetBase, models.Model):
         section_ids = tuple(map(_load_int, data.getlist("wiki-section-id")))
 
         section_orders = map(float, data.getlist("wiki-section-order"))
-        sections = map(json.loads, data.getlist("wiki-section"))
+        sections = map(json.loads, data.getlist("wiki-section-body"))
 
         # Get the present IDs so we can delete absent sections (which have been
         # deleted)
