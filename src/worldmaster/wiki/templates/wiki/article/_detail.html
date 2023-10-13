@@ -1,10 +1,7 @@
 {% load wiki %}
-<article class="wiki article">
+<article class="wiki">
   {% for section in object.sections.all %}
-    <section>
-      <pre>
-{% json section.body indent=2 %}
-      </pre>
+    <section data-body="{% json section.body %}">
     </section>
   {% endfor %}
 </article>

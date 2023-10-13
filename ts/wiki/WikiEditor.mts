@@ -3,7 +3,7 @@ import { SectionEditor } from './SectionEditor.mjs';
 /** A dynamic wiki editor attached to the wiki fieldset.
 */
 export class WikiEditor {
-  private editors: Set<SectionEditor> = new Set();
+  #editors: Set<SectionEditor> = new Set();
 
   static #findForm(element: Element): HTMLFormElement | null {
     if (element instanceof HTMLFormElement) {
@@ -25,7 +25,7 @@ export class WikiEditor {
     }
 
     for (const section of wiki.querySelectorAll('.section')) {
-      this.editors.add(new SectionEditor(section as HTMLLIElement));
+      this.#editors.add(new SectionEditor(section as HTMLLIElement));
     }
 
     for (const add_section_button of wiki.querySelectorAll('.add-section button')) {
@@ -38,7 +38,7 @@ export class WikiEditor {
     }
 
     form.addEventListener('submit', () => {
-      for (const editor of this.editors) {
+      for (const editor of this.#editors) {
         if (!editor.disabled) {
           console.log('updating editor');
           editor.update();
@@ -113,6 +113,6 @@ export class WikiEditor {
 
     add_section_li.parentElement?.insertBefore(fragment, add_section_li);
 
-    this.editors.add(new SectionEditor(section_li));
+    this.#editors.add(new SectionEditor(section_li));
   }
 }
