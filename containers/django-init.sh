@@ -8,6 +8,6 @@ fi
 
 "$VENV/bin/pip" install -e .
 
-tsc
+${YARN:-yarn} build
 
 "$VENV/bin/django-admin" migrate

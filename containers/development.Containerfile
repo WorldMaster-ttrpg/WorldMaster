@@ -35,6 +35,6 @@ WORKDIR /mnt/source
 # container, by default, maps to the user outside the container. This can give
 # the container the right to write into the source directory.
 
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 YARN=yarnpkg
 
 ENTRYPOINT ["/usr/bin/tini", "--"]

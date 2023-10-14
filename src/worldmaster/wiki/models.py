@@ -43,7 +43,7 @@ class Article(RoleTargetBase, models.Model):
         section_ids = tuple(map(_load_int, data.getlist("wiki-section-id")))
 
         section_orders = map(float, data.getlist("wiki-section-order"))
-        sections = data.getlist("wiki-section")
+        sections = map(json.loads, data.getlist("wiki-section-body"))
 
         # Get the present IDs so we can delete absent sections (which have been
         # deleted)
@@ -56,7 +56,7 @@ class Article(RoleTargetBase, models.Model):
             if id is None:
                 section = section_set.create(
                     order=order,
-                    body=json.loads(body),
+                    body=body,
                     article=self,
                 )
 
@@ -72,7 +72,7 @@ class Article(RoleTargetBase, models.Model):
             else:
                 section = get_object_or_404(Section, id=id)
                 if section.role_target.user_is_editor(user):
-                    section.body = text
+                    section.body = body
                     section.order = order
                     section.save()
 
