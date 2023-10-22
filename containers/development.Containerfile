@@ -18,7 +18,10 @@ RUN \
     wget \
     yarnpkg \
   ; \
+  python3 -mvenv /opt/worldmaster/venv; \
   :
+
+VOLUME /opt/worldmaster/venv
 
 # install watchexec for the tsc recompilation
 RUN \
