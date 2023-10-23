@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.db import connection, models
 from django.utils.translation import gettext_lazy as _
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser, AnonymousUser
-    from django.db.models.manager import RelatedManager
 
 User = get_user_model()
 
@@ -40,7 +39,13 @@ class RoleTarget(models.Model):
         through_fields=("target", "user"),
     )
 
-    resolved_roles: RelatedManager[ResolvedRole]
+    def user_roles(self, user: AbstractUser | AnonymousUser) -> frozenset[Role.Type]:
+        with connection.cursor() as cursor:
+            # TODO: resources to pull in user_roles
+            # TODO: Probably use Jinja or something for optional IS NULL clause for anonymous users.
+            cursor.execute(TODO())
+            return frozenset(row[0] for row in cursor.fetchall())
+
 
     def user_is_role(self, user: AbstractUser | AnonymousUser, type: Role.Type) -> bool:
         """Return True if the user counts as this role.
@@ -179,50 +184,3 @@ class RoleTargetBase(models.Model):
 
     class Meta:
         abstract = True
-
-# This allows us to still stick with proper Django QuerySets, avoid peppering
-# raw queries through the code, and avoid using RawQuerySet, which isn't as
-# convenient to work with as QuerySet (and doesn't optimize nicely).
-# See 0006_create_roletargetroles for the definition of the view.
-class ResolvedRole(models.Model):
-    """A non-managed model for a view that resolves all roles for all role_targets.
-
-    Conceptually, this has one row for every role that every use has on every
-    target, including inherited and implied roles.
-
-    The pk should be treated as opaque and unimportant.  It exists just to make
-    django happy.
-    """
-
-    id = models.TextField(
-        blank=False,
-        null=False,
-        primary_key=True,
-    )
-
-    target = models.ForeignKey(
-        RoleTarget,
-        blank=False,
-        null=False,
-        on_delete=models.DO_NOTHING,
-        related_name="resolved_roles",
-    )
-
-    user = models.ForeignKey(
-        User,
-        blank=True,
-        null=True,
-        on_delete=models.DO_NOTHING,
-        related_name="resolved_roles",
-    )
-
-    type = models.SlugField(
-        max_length=16,
-        help_text="The role type, like owner, editor, viewer, etc",
-        choices=Role.Type.choices,
-        blank=False,
-        null=False,
-    )
-
-    class Meta:
-        managed = False
