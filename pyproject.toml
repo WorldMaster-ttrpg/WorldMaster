@@ -16,7 +16,7 @@ classifiers = [
 ]
 
 dependencies = [
-  'Django >= 4.2.0, < 4.3',
+  'Django[argon2] >= 4.2.0, < 4.3',
   'django-stubs >= 1.13.1, < 2',
   'ptpython >= 3.0.22',
   'Werkzeug >= 2.2.2, < 3.0.0',
