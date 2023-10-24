@@ -4,7 +4,6 @@ from typing import Any
 from django.db import models
 from django.db.models.signals import post_delete, pre_save
 from django.dispatch import receiver
-
 from worldmaster.roles.models import RoleTarget, RoleTargetBase
 
 from .models import Article, Section
