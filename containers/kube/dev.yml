@@ -36,6 +36,10 @@ spec:
         - -c
       args:
         - |
+          set -euxf
+          if [ ! -e "$VENV/bin/pip" ]; then
+            python3 -mvenv --upgrade --upgrade-deps "$VENV"
+          fi
           "$VENV/bin/pip" install -e '.[dev]'
   containers:
     - name: dev
