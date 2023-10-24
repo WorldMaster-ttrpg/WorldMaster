@@ -1,11 +1,13 @@
 -- Get user roles on the given target id.
 
+WITH RECURSIVE roletarget_id (id) AS (SELECT ?),
+user_id (id) AS (SELECT ?),
 
 -- Grab the hierarchy of targets from the target id up the chain.
-WITH RECURSIVE ancestors (id, parent_id) AS (
+ancestors (id, parent_id) AS (
     SELECT roles_roletarget.id, roles_roletarget.parent_id
         FROM roles_roletarget
-        WHERE roles_roletarget.id = %s
+        WHERE roles_roletarget.id = (SELECT roletarget_id.id FROM roletarget_id)
 
     UNION ALL
 
@@ -23,9 +25,11 @@ has_master (value) AS (
         JOIN roles_role
             ON roles_role.target_id = roles_roletarget.id
         WHERE roles_role.type = 'master'
-            AND roles_role.user_id = %s
-            -- TODO: handle anonymous users too with an optional IS NULL
-)
+            AND (
+                roles_role.user_id IS NULL
+                OR roles_role.user_id = (SELECT user_id.id FROM user_id)
+            )
+),
 
 -- All roles the user has on the target
 roles (type) AS (
@@ -34,16 +38,18 @@ roles (type) AS (
     FROM roles_role
         JOIN roles_roletarget
             ON roles_role.target_id = roles_roletarget.id
-        WHERE roles_role.target_id = %s
-            AND roles_role.user_id = %s
-            -- TODO: handle anonymous users too with an optional IS NULL
+        WHERE roles_role.target_id = (SELECT roletarget_id.id FROM roletarget_id)
+            AND (
+                roles_role.user_id IS NULL
+                OR roles_role.user_id = (SELECT user_id.id FROM user_id)
+            )
 
-    -- Filter master because we'll get it in the next term anyway.
-    WHERE roles_role.type != 'master'
+            -- Filter master because we'll get it in the next term anyway.
+            AND roles_role.type != 'master'
 
     UNION ALL
 
-    SELECT 'master' FROM has_master LIMIT 1
+    SELECT * FROM (SELECT 'master' FROM has_master LIMIT 1)
 
     UNION
 
@@ -58,4 +64,4 @@ roles (type) AS (
         WHERE roles.type = 'editor'
 )
 
-SELECT type FROM roles
+SELECT roles.type FROM roles

@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+from importlib.resources import files
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from django.contrib.auth import get_user_model
 from django.db import connection, models
+from django.db.models.expressions import RawSQL
 from django.utils.translation import gettext_lazy as _
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser, AnonymousUser
 
 User = get_user_model()
+
+_user_roles = (files("worldmaster.roles") / "sql" / "roletarget" / "user_roles.sql").read_text()
 
 class RoleTarget(models.Model):
     """A hierarchical role target.
@@ -40,10 +44,16 @@ class RoleTarget(models.Model):
     )
 
     def user_roles(self, user: AbstractUser | AnonymousUser) -> frozenset[Role.Type]:
+        if user.is_superuser:
+            # Superuser automatically has all roles on everything.
+            return frozenset((
+                Role.Type.MASTER,
+                Role.Type.EDITOR,
+                Role.Type.VIEWER,
+            ))
+
         with connection.cursor() as cursor:
-            # TODO: resources to pull in user_roles
-            # TODO: Probably use Jinja or something for optional IS NULL clause for anonymous users.
-            cursor.execute(TODO())
+            cursor.execute(_user_roles, (self.pk, user.pk))
             return frozenset(row[0] for row in cursor.fetchall())
 
 
@@ -53,19 +63,7 @@ class RoleTarget(models.Model):
         This is true if this user or the NULL user has the role on this target,
         or if the user is a superuser.
         """
-        # Superuser is always all roles
-        if user.is_superuser:
-            return True
-
-        user_check = models.Q(user=None)
-
-        if user.is_authenticated:
-            user_check |=  models.Q(user=user)
-
-        return self.resolved_roles.filter(
-            user_check,
-            type=type,
-        ).exists()
+        return type in self.user_roles(user)
 
     def user_is_master(self, user: AbstractUser | AnonymousUser) -> bool:
         """Return True if the user has the MASTER role on this or any ancestor."""
@@ -141,6 +139,8 @@ class Role(models.Model):
 
 Model = TypeVar("Model", bound="RoleTargetBase")
 
+_with_role = (files("worldmaster.roles") / "sql" / "roletargetmanager" / "with_role.sql").read_text()
+
 class RoleTargetManager(models.Manager, Generic[Model]):
     def with_role(
         self: RoleTargetManager[Model],
@@ -150,15 +150,7 @@ class RoleTargetManager(models.Manager, Generic[Model]):
         if user.is_superuser:
             return self.all()
 
-        user_check = models.Q(role_target__resolved_roles__user=None)
-
-        if user.is_authenticated:
-            user_check |= models.Q(role_target__resolved_roles__user=user)
-
-        return self.filter(
-            user_check,
-            role_target__resolved_roles__type=type,
-        )
+        return self.filter(role_target__id__in=RawSQL(_with_role, (user.pk, type)))
 
     def mastered_by(self: RoleTargetManager[Model], user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
         return self.with_role(user, Role.Type.MASTER)
