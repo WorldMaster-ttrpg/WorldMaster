@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from importlib.resources import files
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from django.contrib.auth import get_user_model
 from django.db import connection, models
 from django.db.models.expressions import RawSQL
 from django.utils.translation import gettext_lazy as _
+from worldmaster.jinja.sql import environment, var_template
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser, AnonymousUser
 
 User = get_user_model()
 
-_user_roles = (files("worldmaster.roles") / "sql" / "roletarget" / "user_roles.sql").read_text()
+sql_environment = environment("worldmaster.roles", "sql")
+
+_user_roles = var_template(
+    sql_environment.get_template("roletarget/user_roles.sql"),
+)
 
 class RoleTarget(models.Model):
     """A hierarchical role target.
@@ -52,8 +56,12 @@ class RoleTarget(models.Model):
                 Role.Type.VIEWER,
             ))
 
+        sql = _user_roles(
+            roletarget_id=self.pk,
+            user_id=user.pk,
+        )
         with connection.cursor() as cursor:
-            cursor.execute(_user_roles, (self.pk, user.pk))
+            cursor.execute(*sql)
             return frozenset(row[0] for row in cursor.fetchall())
 
 
@@ -139,7 +147,9 @@ class Role(models.Model):
 
 Model = TypeVar("Model", bound="RoleTargetBase")
 
-_with_role = (files("worldmaster.roles") / "sql" / "roletargetmanager" / "with_role.sql").read_text()
+_with_role = var_template(
+    sql_environment.get_template("roletargetmanager/with_role.sql"),
+)
 
 class RoleTargetManager(models.Manager, Generic[Model]):
     def with_role(
@@ -150,7 +160,14 @@ class RoleTargetManager(models.Manager, Generic[Model]):
         if user.is_superuser:
             return self.all()
 
-        return self.filter(role_target__id__in=RawSQL(_with_role, (user.pk, type)))
+        return self.filter(
+            role_target__id__in=RawSQL(
+                *_with_role(
+                    user_id=user.pk,
+                    role_type=type.value,
+                ),
+            ),
+        )
 
     def mastered_by(self: RoleTargetManager[Model], user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
         return self.with_role(user, Role.Type.MASTER)
