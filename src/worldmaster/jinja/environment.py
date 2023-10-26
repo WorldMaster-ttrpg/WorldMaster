@@ -34,11 +34,14 @@ def sql_var(eval_ctx: EvalContext, value: Any, vars: list[Any]) -> str | Markup:
 
 @cache
 def environment() -> Environment:
+    from worldmaster.jinja.database_bytecode_cache import DatabaseBytecodeCache
+
     env = Environment(
         loader=AppLoader(),
         autoescape=False,
         optimized=True,
         undefined=StrictUndefined,
+        bytecode_cache=DatabaseBytecodeCache(),
     )
     env.filters["sql_var"] = sql_var
     return env
