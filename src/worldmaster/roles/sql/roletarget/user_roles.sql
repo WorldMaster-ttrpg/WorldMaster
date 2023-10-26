@@ -1,13 +1,10 @@
 -- Get user roles on the given target id.
 
-WITH RECURSIVE roletarget_id (id) AS (SELECT ?),
-user_id (id) AS (SELECT ?),
-
 -- Grab the hierarchy of targets from the target id up the chain.
-ancestors (id, parent_id) AS (
+WITH RECURSIVE ancestors (id, parent_id) AS (
     SELECT roles_roletarget.id, roles_roletarget.parent_id
         FROM roles_roletarget
-        WHERE roles_roletarget.id = (SELECT roletarget_id.id FROM roletarget_id)
+        WHERE roles_roletarget.id = {{ roletarget_id|var(vars) }}
 
     UNION ALL
 
@@ -27,7 +24,9 @@ has_master (value) AS (
         WHERE roles_role.type = 'master'
             AND (
                 roles_role.user_id IS NULL
-                OR roles_role.user_id = (SELECT user_id.id FROM user_id)
+                {% if user_id is not none %}
+                OR roles_role.user_id = {{ user_id|var(vars) }}
+                {% endif %}
             )
 ),
 
@@ -38,14 +37,18 @@ roles (type) AS (
     FROM roles_role
         JOIN roles_roletarget
             ON roles_role.target_id = roles_roletarget.id
-        WHERE roles_role.target_id = (SELECT roletarget_id.id FROM roletarget_id)
-            AND (
-                roles_role.user_id IS NULL
-                OR roles_role.user_id = (SELECT user_id.id FROM user_id)
-            )
+        WHERE roles_role.target_id = {{ roletarget_id|var(vars) }}
 
             -- Filter master because we'll get it in the next term anyway.
             AND roles_role.type != 'master'
+
+            AND (
+                roles_role.user_id IS NULL
+                {% if user_id is not none %}
+                OR roles_role.user_id = {{ user_id|var(vars) }}
+                {% endif %}
+            )
+
 
     UNION ALL
 

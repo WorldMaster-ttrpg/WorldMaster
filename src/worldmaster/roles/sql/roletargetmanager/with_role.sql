@@ -1,11 +1,7 @@
 -- Get all roletarget ids that the user has the given role on.
 
-WITH RECURSIVE user_id (id) AS (SELECT ?),
-
-role_type (role_type) AS (SELECT ?),
-
 -- Grab all target ids that are mastered and their children.
-mastered (id) AS (
+WITH RECURSIVE mastered (id) AS (
     SELECT roles_roletarget.id
         FROM roles_roletarget
         JOIN roles_role
@@ -13,7 +9,9 @@ mastered (id) AS (
         WHERE roles_role.type = 'master'
             AND (
                 roles_role.user_id IS NULL
-                OR roles_role.user_id = (SELECT user_id.id FROM user_id)
+                {% if user_id is not none %}
+                OR roles_role.user_id = {{ user_id|var(vars) }}
+                {% endif %}
             )
 
     UNION
@@ -35,10 +33,12 @@ with_role (id) AS (
         JOIN roles_role
             ON roles_role.target_id = roles_roletarget.id
         WHERE roles_role.type = 'editor'
-            AND (SELECT role_type.role_type FROM role_type) IN ('viewer', 'editor')
+            AND {{ role_type|var(vars) }} IN ('viewer', 'editor')
             AND (
                 roles_role.user_id IS NULL
-                OR roles_role.user_id = (SELECT user_id.id FROM user_id)
+                {% if user_id is not none %}
+                OR roles_role.user_id = {{ user_id|var(vars) }}
+                {% endif %}
             )
 
     UNION
@@ -49,10 +49,12 @@ with_role (id) AS (
         JOIN roles_role
             ON roles_role.target_id = roles_roletarget.id
         WHERE roles_role.type = 'viewer'
-            AND (SELECT role_type.role_type FROM role_type) = 'viewer'
+            AND {{ role_type|var(vars) }} = 'viewer'
             AND (
                 roles_role.user_id IS NULL
-                OR roles_role.user_id = (SELECT user_id.id FROM user_id)
+                {% if user_id is not none %}
+                OR roles_role.user_id = {{ user_id|var(vars) }}
+                {% endif %}
             )
 )
 
