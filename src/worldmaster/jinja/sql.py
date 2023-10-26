@@ -1,6 +1,7 @@
 """Environments and filters to help render SQL with Jinja.
 
-This tries to lean into idiomatic Django.  Vars are not substituted in directly
+This tries to lean into idiomatic Django.  Vars are not substituted in directly,
+but are rolled into a set of variables in the order that they are encountered.
 """
 from __future__ import annotations
 
