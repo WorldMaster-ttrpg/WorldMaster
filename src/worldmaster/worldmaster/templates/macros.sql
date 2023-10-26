@@ -5,7 +5,7 @@
     (
         {{table}}.user_id IS NULL
         {% if user.id is not none %}
-        OR {{table}}.user_id = {{ user.id|var(vars) }}
+        OR {{table}}.user_id = {{ user.id|sql_var(vars) }}
         {% endif %}
     )
     {% endif %}

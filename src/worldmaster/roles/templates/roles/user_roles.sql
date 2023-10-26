@@ -6,7 +6,7 @@
 WITH RECURSIVE ancestors (id, parent_id) AS (
     SELECT roles_roletarget.id, roles_roletarget.parent_id
         FROM roles_roletarget
-        WHERE roles_roletarget.id = {{ roletarget.id|var(vars) }}
+        WHERE roles_roletarget.id = {{ roletarget.id|sql_var(vars) }}
 
     UNION ALL
 
@@ -34,7 +34,7 @@ roles (type) AS (
     FROM roles_role
         JOIN roles_roletarget
             ON roles_role.target_id = roles_roletarget.id
-        WHERE roles_role.target_id = {{ roletarget.id|var(vars) }}
+        WHERE roles_role.target_id = {{ roletarget.id|sql_var(vars) }}
 
             -- Filter master because we'll get it in the next term anyway.
             AND roles_role.type != 'master'

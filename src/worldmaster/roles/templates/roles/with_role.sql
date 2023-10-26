@@ -31,9 +31,9 @@ with_role (id) AS (
             ON roles_role.target_id = roles_roletarget.id
         WHERE (
             roles_role.type = 'editor'
-            AND {{ role_type|var(vars) }} IN ('viewer', 'editor')
+            AND {{ role_type|sql_var(vars) }} IN ('viewer', 'editor')
             OR roles_role.type = 'viewer'
-            AND {{ role_type|var(vars) }} = 'viewer'
+            AND {{ role_type|sql_var(vars) }} = 'viewer'
         ) AND {{ user_condition(vars=vars, user=user, table='roles_role') }}
 )
 

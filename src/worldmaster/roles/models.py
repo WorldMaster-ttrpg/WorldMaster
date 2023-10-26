@@ -6,18 +6,13 @@ from django.contrib.auth import get_user_model
 from django.db import connection, models
 from django.db.models.expressions import RawSQL
 from django.utils.translation import gettext_lazy as _
-from worldmaster.jinja.sql import environment, var_template
+from worldmaster.jinja import get_template
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser, AnonymousUser
 
 User = get_user_model()
 
-sql_environment = environment("worldmaster.roles", "sql")
-
-_user_roles = var_template(
-    sql_environment.get_template("roletarget/user_roles.sql"),
-)
 
 class RoleTarget(models.Model):
     """A hierarchical role target.
@@ -56,12 +51,15 @@ class RoleTarget(models.Model):
                 Role.Type.VIEWER,
             ))
 
-        sql = _user_roles(
+        template = get_template("roles/user_roles.sql")
+        vars = []
+        sql = template.render(
             roletarget=self,
             user=user,
+            vars=vars,
         )
         with connection.cursor() as cursor:
-            cursor.execute(*sql)
+            cursor.execute(sql, vars)
             return frozenset(row[0] for row in cursor.fetchall())
 
 
@@ -147,10 +145,6 @@ class Role(models.Model):
 
 Model = TypeVar("Model", bound="RoleTargetBase")
 
-_with_role = var_template(
-    sql_environment.get_template("roletargetmanager/with_role.sql"),
-)
-
 class RoleTargetManager(models.Manager, Generic[Model]):
     def with_role(
         self: RoleTargetManager[Model],
@@ -160,13 +154,16 @@ class RoleTargetManager(models.Manager, Generic[Model]):
         if user.is_superuser:
             return self.all()
 
+        template = get_template("roles/with_role.sql")
+        vars = []
+        sql = template.render(
+            user=user,
+            role_type=type.value,
+            vars=vars,
+        )
+
         return self.filter(
-            role_target__id__in=RawSQL(
-                *_with_role(
-                    user=user,
-                    role_type=type.value,
-                ),
-            ),
+            role_target__id__in=RawSQL(sql, vars),
         )
 
     def mastered_by(self: RoleTargetManager[Model], user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
