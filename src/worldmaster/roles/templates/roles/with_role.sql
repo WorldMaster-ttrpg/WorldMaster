@@ -1,6 +1,6 @@
 -- Get all roletarget ids that the user has the given role on.
 
-{% from "macros.sql" import and_user %}
+{% from "macros.sql" import user_condition %}
 
 -- Grab all target ids that are mastered and their children.
 WITH RECURSIVE mastered (id) AS (
@@ -9,7 +9,7 @@ WITH RECURSIVE mastered (id) AS (
         JOIN roles_role
             ON roles_role.target_id = roles_roletarget.id
         WHERE roles_role.type = 'master'
-            {{ and_user(vars=vars, user_id=user_id) }}
+            AND {{ user_condition(vars=vars, user=user, table='roles_role') }}
 
     UNION
 
@@ -29,20 +29,12 @@ with_role (id) AS (
 
         JOIN roles_role
             ON roles_role.target_id = roles_roletarget.id
-        WHERE roles_role.type = 'editor'
-            AND {{ role_type|var(vars) }} IN ('viewer', 'editor')
-            {{ and_user(vars=vars, user_id=user_id) }}
-
-    UNION
-
-    SELECT roles_roletarget.id
-        FROM roles_roletarget
-
-        JOIN roles_role
-            ON roles_role.target_id = roles_roletarget.id
-        WHERE roles_role.type = 'viewer'
-            AND {{ role_type|var(vars) }} = 'viewer'
-            {{ and_user(vars=vars, user_id=user_id) }}
+        WHERE (
+            roles_role.type = 'editor'
+            AND {{ role_type|sql_var(vars) }} IN ('viewer', 'editor')
+            OR roles_role.type = 'viewer'
+            AND {{ role_type|sql_var(vars) }} = 'viewer'
+        ) AND {{ user_condition(vars=vars, user=user, table='roles_role') }}
 )
 
 SELECT with_role.id FROM with_role

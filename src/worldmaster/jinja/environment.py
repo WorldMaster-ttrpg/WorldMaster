@@ -5,24 +5,22 @@ but are rolled into a set of variables in the order that they are encountered.
 """
 from __future__ import annotations
 
-from collections.abc import Callable
 from functools import cache
 from typing import TYPE_CHECKING
 
-from jinja2 import Environment, pass_eval_context
+from jinja2 import Environment, StrictUndefined, pass_eval_context
 from markupsafe import Markup
 
-from .importlib_loader import ImportlibLoader
+from .app_loader import AppLoader
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from jinja2 import Template
     from jinja2.nodes import EvalContext
 
 
 @pass_eval_context
-def var(eval_ctx: EvalContext, value: Any, vars: list[Any]) -> str | Markup:
+def sql_var(eval_ctx: EvalContext, value: Any, vars: list[Any]) -> str | Markup:
     """Substitute the variable to a placeholder and push it to a parameter
     array.
 
@@ -35,21 +33,15 @@ def var(eval_ctx: EvalContext, value: Any, vars: list[Any]) -> str | Markup:
         return "%s"
 
 @cache
-def environment(package_name: str, *package_path: str) -> Environment:
+def environment() -> Environment:
+    from worldmaster.jinja.database_bytecode_cache import DatabaseBytecodeCache
+
     env = Environment(
-        loader=ImportlibLoader(package_name, *package_path),
+        loader=AppLoader(),
         autoescape=False,
         optimized=True,
+        undefined=StrictUndefined,
+        bytecode_cache=DatabaseBytecodeCache(),
     )
-    env.filters["var"] = var
+    env.filters["sql_var"] = sql_var
     return env
-
-def var_template(template: Template) -> Callable[..., tuple[str, list[Any]]]:
-    """Decorator for execting a template render, returning the sql and variables."""
-
-    def render(*args: Any, **kwargs: Any) -> tuple[str, list[Any]]:
-        vars = []
-        rendered = template.render(*args, vars=vars, **kwargs)
-        return rendered, vars
-
-    return render

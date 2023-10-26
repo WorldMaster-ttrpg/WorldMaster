@@ -1,12 +1,12 @@
 -- Get user roles on the given target id.
 
-{% from "macros.sql" import and_user %}
+{% from "macros.sql" import user_condition %}
 
 -- Grab the hierarchy of targets from the target id up the chain.
 WITH RECURSIVE ancestors (id, parent_id) AS (
     SELECT roles_roletarget.id, roles_roletarget.parent_id
         FROM roles_roletarget
-        WHERE roles_roletarget.id = {{ roletarget_id|var(vars) }}
+        WHERE roles_roletarget.id = {{ roletarget.id|sql_var(vars) }}
 
     UNION ALL
 
@@ -24,7 +24,7 @@ has_master (value) AS (
         JOIN roles_role
             ON roles_role.target_id = roles_roletarget.id
         WHERE roles_role.type = 'master'
-            {{ and_user(vars=vars, user_id=user_id) }}
+            AND {{ user_condition(vars=vars, user=user, table='roles_role') }}
 ),
 
 -- All roles the user has on the target
@@ -34,12 +34,12 @@ roles (type) AS (
     FROM roles_role
         JOIN roles_roletarget
             ON roles_role.target_id = roles_roletarget.id
-        WHERE roles_role.target_id = {{ roletarget_id|var(vars) }}
+        WHERE roles_role.target_id = {{ roletarget.id|sql_var(vars) }}
 
             -- Filter master because we'll get it in the next term anyway.
             AND roles_role.type != 'master'
 
-            {{ and_user(vars=vars, user_id=user_id) }}
+            AND {{ user_condition(vars=vars, user=user, table='roles_role') }}
 
 
     UNION ALL

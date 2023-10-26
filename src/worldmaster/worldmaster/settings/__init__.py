@@ -15,6 +15,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "worldmaster.jinja",
     "worldmaster.worlds",
     "worldmaster.wiki",
     "worldmaster.roles",
