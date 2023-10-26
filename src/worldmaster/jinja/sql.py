@@ -4,6 +4,7 @@ This tries to lean into idiomatic Django.  Vars are not substituted in directly
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import cache
 from typing import TYPE_CHECKING
 
@@ -15,6 +16,7 @@ from .importlib_loader import ImportlibLoader
 if TYPE_CHECKING:
     from typing import Any
 
+    from jinja2 import Template
     from jinja2.nodes import EvalContext
 
 
@@ -41,3 +43,12 @@ def environment(package_name: str, *package_path: str) -> Environment:
     env.filters["var"] = var
     return env
 
+def var_template(template: Template) -> Callable[..., tuple[str, list[Any]]]:
+    """Decorator for execting a template render, returning the sql and variables."""
+
+    def render(*args: Any, **kwargs: Any) -> tuple[str, list[Any]]:
+        vars = []
+        rendered = template.render(*args, vars=vars, **kwargs)
+        return rendered, vars
+
+    return render
