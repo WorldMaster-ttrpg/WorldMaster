@@ -57,8 +57,8 @@ class RoleTarget(models.Model):
             ))
 
         sql = _user_roles(
-            roletarget_id=self.pk,
-            user_id=user.pk,
+            roletarget=self,
+            user=user,
         )
         with connection.cursor() as cursor:
             cursor.execute(*sql)
@@ -163,7 +163,7 @@ class RoleTargetManager(models.Manager, Generic[Model]):
         return self.filter(
             role_target__id__in=RawSQL(
                 *_with_role(
-                    user_id=user.pk,
+                    user=user,
                     role_type=type.value,
                 ),
             ),

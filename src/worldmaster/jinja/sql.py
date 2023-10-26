@@ -9,7 +9,7 @@ from collections.abc import Callable
 from functools import cache
 from typing import TYPE_CHECKING
 
-from jinja2 import Environment, pass_eval_context
+from jinja2 import Environment, StrictUndefined, pass_eval_context
 from markupsafe import Markup
 
 from .importlib_loader import ImportlibLoader
@@ -40,6 +40,7 @@ def environment(package_name: str, *package_path: str) -> Environment:
         loader=ImportlibLoader(package_name, *package_path),
         autoescape=False,
         optimized=True,
+        undefined=StrictUndefined,
     )
     env.filters["var"] = var
     return env

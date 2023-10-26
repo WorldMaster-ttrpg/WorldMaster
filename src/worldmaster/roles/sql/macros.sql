@@ -1,11 +1,11 @@
-{% macro and_user(user_id, vars) %}
-    {% if user_id is none %}
-    AND roles_role.user_id IS NULL
+{% macro user_condition(user, vars, table) %}
+    {% if user.id is none %}
+    {{table}}.user_id IS NULL
     {% else %}
-    AND (
-        roles_role.user_id IS NULL
-        {% if user_id is not none %}
-        OR roles_role.user_id = {{ user_id|var(vars) }}
+    (
+        {{table}}.user_id IS NULL
+        {% if user.id is not none %}
+        OR {{table}}.user_id = {{ user.id|var(vars) }}
         {% endif %}
     )
     {% endif %}
