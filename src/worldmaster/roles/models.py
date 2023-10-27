@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Self, TypeVar
 
 from django.contrib.auth import get_user_model
 from django.db import connection, models
@@ -86,7 +86,7 @@ class RoleTarget(models.Model):
 class Role(models.Model):
     """A role, giving a user specific privileges on a specific target."""
 
-    class Type(models.TextChoices):
+    class Type(models.IntegerChoices):
         # Admin permission on the item.  This is not called "owner", because
         # it doesn't just imply ownership, but full admin access, applied
         # transitively.  A MASTER on some object gets MASTER access on all sub-
@@ -94,17 +94,17 @@ class Role(models.Model):
         # The MASTER role needed to delete non-leaf objects, like Wiki articles,
         # because otherwise an EDITOR could delete sections they don't know
         # are there.
-        MASTER = "master", _("Master")
+        MASTER = 1, _("Master")
 
         # Allows editing and adding children to things.
         # On a Wiki: Allows adding sections.
         # On a Wiki section: Allows modifying or deleting the section.
         # On a Plane: Allows adding entities.
         # On a World: Allows adding Planes.
-        EDITOR = "editor", _("Editor")
+        EDITOR = 2, _("Editor")
 
         # Simply allows seeing some object.
-        VIEWER = "viewer", _("Viewer")
+        VIEWER = 3, _("Viewer")
 
 
     target = models.ForeignKey(
@@ -125,12 +125,19 @@ class Role(models.Model):
         related_name="roles",
         related_query_name="role",
     )
-    type = models.SlugField(
-        max_length=16,
+
+    type = models.PositiveSmallIntegerField(
         help_text="The role type, like owner, editor, viewer, etc",
         choices=Type.choices,
         blank=False,
         null=False,
+    )
+
+    explicit = models.BooleanField(
+        blank=False,
+        null=False,
+        help_text="Whether this is a manually-applied role.  If this is False, then the role is inherited or implied.",
+        default=True,
     )
     class Meta:
         constraints = [
@@ -139,6 +146,16 @@ class Role(models.Model):
 
     def __str__(self) -> str:
         return f"<Role: {self.user.username!r} {self.type!r} {self.target!r}>"
+
+    @classmethod
+    def rebuild(cls: type[Self]) -> None:
+        """Rebuild all implicit roles.
+        """
+        cls.objects.filter(explicit=False).delete()
+        # This is a naive implementation.  We could probably do better by
+        # Sharing some implementation between the signals and this.
+        for role in cls.objects.all():
+            role.save()
 
     __repr__ = __str__
 
