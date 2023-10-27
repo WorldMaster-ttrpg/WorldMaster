@@ -26,10 +26,14 @@ class AppLoader(BaseLoader):
                 hash = sha512()
                 hash.update(source_bytes)
                 digest = hash.digest()
-                def uptodate():
-                    source_bytes = file.read_bytes()
-                    hash = sha512()
-                    hash.update(source_bytes)
-                    return digest == hash.digest()
+                if __debug__:
+                    def uptodate() -> bool:
+                        source_bytes = file.read_bytes()
+                        hash = sha512()
+                        hash.update(source_bytes)
+                        return digest == hash.digest()
+                else:
+                    def uptodate() -> bool:
+                        return True
                 return (source, None, uptodate)
         raise TemplateNotFound(template)
