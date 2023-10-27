@@ -19,14 +19,21 @@ WITH RECURSIVE mastered (id) AS (
             ON roles_roletarget.parent_id = mastered.id
 ),
 
-with_role (id) AS (
+typed_mastered (id) AS (
     SELECT mastered.id FROM mastered
+        JOIN {{ table }}
+            ON {{ table }}.role_target_id = mastered.id
+),
+
+with_role (id) AS (
+    SELECT typed_mastered.id FROM typed_mastered
 
     UNION
 
     SELECT roles_roletarget.id
         FROM roles_roletarget
-
+        JOIN {{ table }}
+            ON {{ table }}.role_target_id = roles_roletarget.id
         JOIN roles_role
             ON roles_role.target_id = roles_roletarget.id
         WHERE (

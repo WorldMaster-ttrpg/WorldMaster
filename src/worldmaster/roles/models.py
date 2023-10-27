@@ -159,6 +159,7 @@ class RoleTargetManager(models.Manager, Generic[Model]):
         sql = template.render(
             user=user,
             role_type=type.value,
+            table=self.model._meta.db_table,
             vars=vars,
         )
 
