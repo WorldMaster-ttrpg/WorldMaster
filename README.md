@@ -14,17 +14,22 @@ The main development branch lives on [Codeberg](https://codeberg.org/WorldMaster
 When developing, there is an easy set of containers available.  You work with these via [`just`](https://github.com/casey/just):
 
 ```sh
-# Create containers, or restart them.
-just containers
-
-# The same as the above.
-just
-
-# Destroy all volumes and containers.
-just clean
-
-# Restart django and run migrations
-just runserver
+dev                # Start up the dev pod.  This is like the django pod, but just sets up the venv and drops you into a shell.
+dev-shell          # Run a shell on the dev pod.
+django             # Run the django pod, which runs `runserver`.
+django-admin *args # Run a django-admin command on the dev pod.
+down               # Tear down running worldmaster pods.
+down-dev           # Tear down the dev pod.
+down-django        # Tear down the django pod.
+down-watchtsc      # Tear down the watchtsc pod.
+image name         # Build the named image as the worldmaster tag.
+images             # Build all images.
+makemigrations
+pods               # Start up development pods.  This is necessary to access the site on a web browser.
+push-image name    # Push the named image as the worldmaster tag.
+push-images        # Push all images.
+test
+watchtsc           # Run the watchtsc pod, which compiles typescript to js on all changes into the shared static volume.
 ```
 
 All docker resources are prefixed with `worldmaster-`.
