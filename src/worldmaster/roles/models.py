@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Generic, Self, TypeVar
 
 from django.contrib.auth import get_user_model
-from django.db import connection, models
-from django.db.models.expressions import RawSQL
+from django.db import models
 from django.utils.translation import gettext_lazy as _
-from worldmaster.jinja import get_template
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser, AnonymousUser
-
-User = get_user_model()
-
+    from django.db.models.manager import RelatedManager
+    from worldmaster.worldmaster.models import User
+else:
+    User = get_user_model()
 
 class RoleTarget(models.Model):
     """A hierarchical role target.
@@ -24,7 +24,9 @@ class RoleTarget(models.Model):
     reference this.
     """
 
-    parent = models.ForeignKey(
+    id: int
+
+    parent: models.ForeignKey[RoleTarget | None, RoleTarget | None] = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,
         help_text="The parent of this RoleTarget, if it's not a root",
@@ -34,7 +36,9 @@ class RoleTarget(models.Model):
         related_name="children",
     )
 
-    users = models.ManyToManyField(
+    children: RelatedManager[RoleTarget]
+
+    users: models.ManyToManyField[User, User] = models.ManyToManyField(
         User,
         related_name="role_targets",
         related_query_name="role_target",
@@ -42,26 +46,7 @@ class RoleTarget(models.Model):
         through_fields=("target", "user"),
     )
 
-    def user_roles(self, user: AbstractUser | AnonymousUser) -> frozenset[Role.Type]:
-        if user.is_superuser:
-            # Superuser automatically has all roles on everything.
-            return frozenset((
-                Role.Type.MASTER,
-                Role.Type.EDITOR,
-                Role.Type.VIEWER,
-            ))
-
-        template = get_template("roles/user_roles.sql")
-        vars = []
-        sql = template.render(
-            roletarget=self,
-            user=user,
-            vars=vars,
-        )
-        with connection.cursor() as cursor:
-            cursor.execute(sql, vars)
-            return frozenset(row[0] for row in cursor.fetchall())
-
+    roles: RelatedManager[Role]
 
     def user_is_role(self, user: AbstractUser | AnonymousUser, type: Role.Type) -> bool:
         """Return True if the user counts as this role.
@@ -69,7 +54,19 @@ class RoleTarget(models.Model):
         This is true if this user or the NULL user has the role on this target,
         or if the user is a superuser.
         """
-        return type in self.user_roles(user)
+        # Superuser is always all roles
+        if user.is_superuser:
+            return True
+
+        user_check = models.Q(user=None)
+
+        if user.is_authenticated:
+            user_check |= models.Q(user=user)
+
+        return self.roles.filter(
+            user_check,
+            type=type,
+        ).exists()
 
     def user_is_master(self, user: AbstractUser | AnonymousUser) -> bool:
         """Return True if the user has the MASTER role on this or any ancestor."""
@@ -82,6 +79,57 @@ class RoleTarget(models.Model):
     def user_is_viewer(self, user: AbstractUser | AnonymousUser):
         """If the user has VIEWER on this."""
         return self.user_is_role(user, Role.Type.VIEWER)
+
+    def _delete_implicit_roles(self, recursive: bool = True):
+        """Delete the implicit roles for this role target and optionally its
+        children.
+        """
+        self.roles.filter(explicit=False).delete()
+
+        if recursive:
+            for child in self.children.all():
+                child._delete_implicit_roles()
+
+    def _setup_implicit_roles(self, recursive: bool = True):
+        """Set up implicit roles for a role target.
+        """
+        parent = self.parent
+
+        user_id: int
+        type: Role.Type
+
+        # Inherited roles first.
+        if parent is not None:
+            for user_id, type in self.roles.filter(
+                type__in=Role._INHERITED,
+            ).values_list("user_id", "type"):
+                self.roles.get_or_create(
+                    type=type,
+                    user_id=user_id,
+                    defaults={
+                        "explicit": False,
+                    },
+                )
+
+        # Then sub-roles.
+        for user_id, type in self.roles.filter(
+            type__in=Role._SUB.keys(),
+        ).values_list(
+            "user_id",
+            "type",
+        ):
+            for sub in Role._SUB[type]:
+                self.roles.get_or_create(
+                    type=sub,
+                    user_id=user_id,
+                    defaults={
+                        "explicit": False,
+                    },
+                )
+
+        if recursive:
+            for child in self.children.all():
+                child._setup_implicit_roles()
 
 class Role(models.Model):
     """A role, giving a user specific privileges on a specific target."""
@@ -106,8 +154,23 @@ class Role(models.Model):
         # Simply allows seeing some object.
         VIEWER = 3, _("Viewer")
 
+    # A map from a Role type to all the Role types that it implicitly-grants.
+    # Role.Types don't include themselves.
+    # A signal automatically grants the sub-roles.
+    _SUB: Mapping[Type, frozenset[Type]] = {
+        Type.MASTER: frozenset((Type.EDITOR, Type.VIEWER)),
+        Type.EDITOR: frozenset((Type.VIEWER,)),
+        Type.VIEWER: frozenset(),
+    }
 
-    target = models.ForeignKey(
+    # Roles that are inherited from parent roletargets.
+    _INHERITED: frozenset[Type] = frozenset((
+        Type.MASTER,
+    ))
+
+    id: int
+
+    target: models.ForeignKey[RoleTarget, RoleTarget] = models.ForeignKey(
         RoleTarget,
         on_delete=models.CASCADE,
         help_text="The target for this role",
@@ -116,7 +179,7 @@ class Role(models.Model):
         related_name="roles",
         related_query_name="role",
     )
-    user = models.ForeignKey(
+    user: models.ForeignKey[User, User] = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         help_text="The user with this role.  If NULL, allows anonymous access to the role.",
@@ -126,19 +189,20 @@ class Role(models.Model):
         related_query_name="role",
     )
 
-    type = models.PositiveSmallIntegerField(
+    type: models.PositiveSmallIntegerField[Type, Type] = models.PositiveSmallIntegerField(
         help_text="The role type, like owner, editor, viewer, etc",
         choices=Type.choices,
         blank=False,
         null=False,
     )
 
-    explicit = models.BooleanField(
+    explicit: models.BooleanField[bool, bool] = models.BooleanField(
         blank=False,
         null=False,
         help_text="Whether this is a manually-applied role.  If this is False, then the role is inherited or implied.",
         default=True,
     )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["target", "user", "type"], name="unique_role_target_user_type"),
@@ -171,17 +235,14 @@ class RoleTargetManager(models.Manager, Generic[Model]):
         if user.is_superuser:
             return self.all()
 
-        template = get_template("roles/with_role.sql")
-        vars = []
-        sql = template.render(
-            user=user,
-            role_type=type.value,
-            table=self.model._meta.db_table,
-            vars=vars,
-        )
+        user_check = models.Q(role_target__role__user=None)
+
+        if user.is_authenticated:
+            user_check |= models.Q(role_target__role__user=user)
 
         return self.filter(
-            role_target__id__in=RawSQL(sql, vars),
+            user_check,
+            role_target__role__type=type,
         )
 
     def mastered_by(self: RoleTargetManager[Model], user: AbstractUser | AnonymousUser) -> models.QuerySet[Model]:
