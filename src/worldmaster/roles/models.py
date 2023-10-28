@@ -100,7 +100,7 @@ class RoleTarget(models.Model):
 
         # Inherited roles first.
         if parent is not None:
-            for user_id, type in self.roles.filter(
+            for user_id, type in parent.roles.filter(
                 type__in=Role._INHERITED,
             ).values_list("user_id", "type"):
                 self.roles.get_or_create(
@@ -209,7 +209,12 @@ class Role(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"<Role: {self.user.username!r} {self.type!r} {self.target!r}>"
+        if self.user is not None:
+            username = self.user.username
+        else:
+            username = "PUBLIC"
+        type = Role.Type(self.type)
+        return f"<Role: {username!r} {type!r} {self.target!r}>"
 
     @classmethod
     def rebuild(cls: type[Self]) -> None:

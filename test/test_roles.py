@@ -40,8 +40,7 @@ class RoleTestCase(TestCase):
         self.article_target: RoleTarget = self.article.role_target
 
     def test_master_inherit(self):
-        Role.objects.create(
-            target=self.world_target,
+        self.world_target.roles.create(
             user=self.user,
             type=Role.Type.MASTER,
         )
@@ -83,8 +82,7 @@ class RoleTestCase(TestCase):
                     user=self.user,
                     type=type,
                 ).exists():
-                    Role.objects.create(
-                        target=self.world_target,
+                    self.world_target.roles.create(
                         user=self.user,
                         type=type,
                     )
@@ -108,8 +106,7 @@ class RoleTestCase(TestCase):
                 self.assertNotIn(self.article, Article.objects.with_role(self.anonymous_user, type))
 
     def test_master_implied(self):
-        Role.objects.create(
-            target=self.article_target,
+        self.article_target.roles.create(
             user=self.user,
             type=Role.Type.MASTER,
         )
@@ -180,8 +177,7 @@ class RoleTestCase(TestCase):
         self.assertNotIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_master_implied_inherited(self):
-        Role.objects.create(
-            target=self.world_target,
+        self.world_target.roles.create(
             user=self.user,
             type=Role.Type.MASTER,
         )
@@ -253,8 +249,7 @@ class RoleTestCase(TestCase):
         self.assertNotIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_editor_implied(self):
-        Role.objects.create(
-            target=self.article_target,
+        self.article_target.roles.create(
             user=self.user,
             type=Role.Type.EDITOR,
         )
@@ -325,8 +320,7 @@ class RoleTestCase(TestCase):
         self.assertNotIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_viewer_implied(self):
-        Role.objects.create(
-            target=self.article_target,
+        self.article_target.roles.create(
             user=self.user,
             type=Role.Type.VIEWER,
         )
@@ -397,8 +391,7 @@ class RoleTestCase(TestCase):
         self.assertNotIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_master_inherit(self):
-        Role.objects.create(
-            target=self.world_target,
+        self.world_target.roles.create(
             user=None,
             type=Role.Type.MASTER,
         )
@@ -431,17 +424,12 @@ class RoleTestCase(TestCase):
 
     def test_anonymous_other_not_inherit(self):
         for type in Role.Type:
-            if type is not Role.Type.MASTER:
-                if not Role.objects.filter(
+            if type not in Role._INHERITED:
+                Role.objects.get_or_create(
                     target=self.world_target,
                     user=None,
                     type=type,
-                ).exists():
-                    Role.objects.create(
-                        target=self.world_target,
-                        user=None,
-                        type=type,
-                    )
+                )
 
                 self.assertFalse(
                     self.plane_target.user_is_role(
@@ -468,8 +456,7 @@ class RoleTestCase(TestCase):
                 self.assertNotIn(self.article, Article.objects.with_role(self.anonymous_user, type))
 
     def test_anonymous_master_implied(self):
-        Role.objects.create(
-            target=self.article_target,
+        self.article_target.roles.create(
             user=None,
             type=Role.Type.MASTER,
         )
@@ -540,8 +527,7 @@ class RoleTestCase(TestCase):
         self.assertIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_master_implied_inherited(self):
-        Role.objects.create(
-            target=self.world_target,
+        self.world_target.roles.create(
             user=None,
             type=Role.Type.MASTER,
         )
@@ -613,8 +599,7 @@ class RoleTestCase(TestCase):
         self.assertIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_editor_implied(self):
-        Role.objects.create(
-            target=self.article_target,
+        self.article_target.roles.create(
             user=None,
             type=Role.Type.EDITOR,
         )
@@ -686,8 +671,7 @@ class RoleTestCase(TestCase):
         self.assertIn(self.article, Article.objects.visible_to(self.anonymous_user))
 
     def test_anonymous_viewer_implied(self):
-        Role.objects.create(
-            target=self.article_target,
+        self.article_target.roles.create(
             user=None,
             type=Role.Type.VIEWER,
         )
@@ -759,13 +743,12 @@ class RoleTestCase(TestCase):
 
 
     def test_no_duplicates(self):
-        Role.objects.create(
-            target=self.world_target,
+        self.world_target.roles.create(
             user=self.user,
             type=Role.Type.MASTER,
         )
 
-        Role.objects.create(
+        Role.objects.get_or_create(
             target=self.plane_target,
             user=self.user,
             type=Role.Type.EDITOR,
