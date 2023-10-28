@@ -178,6 +178,8 @@ class Role(models.Model):
         null=False,
         related_name="roles",
         related_query_name="role",
+        # Covered by the Unique constraints.
+        db_index=False,
     )
     user: models.ForeignKey[User, User] = models.ForeignKey(
         User,
@@ -187,6 +189,8 @@ class Role(models.Model):
         null=True,
         related_name="roles",
         related_query_name="role",
+        # Covered by the multicolumn index.
+        db_index=False,
     )
 
     type: models.PositiveSmallIntegerField[Type, Type] = models.PositiveSmallIntegerField(
@@ -194,6 +198,7 @@ class Role(models.Model):
         choices=Type.choices,
         blank=False,
         null=False,
+        db_index=True,
     )
 
     explicit: models.BooleanField[bool, bool] = models.BooleanField(
@@ -205,7 +210,22 @@ class Role(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["target", "user", "type"], name="unique_role_target_user_type"),
+            models.UniqueConstraint(
+                fields=("target", "user", "type"),
+                name="unique_role_target_user_type",
+                condition=models.Q(user__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=("target", "type"),
+                name="unique_role_target_anonymous_type",
+                condition=models.Q(user__isnull=True),
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=("user", "type"),
+                name="role_user_type",
+            ),
         ]
 
     def __str__(self) -> str:
