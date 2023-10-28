@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 from django.db import models
 from django.urls import reverse
-
 from worldmaster.roles.models import RoleTargetBase, RoleTargetManager
 from worldmaster.wiki.models import ArticleBase
 from worldmaster.worldmaster.validators import validate_not_reserved
@@ -76,7 +75,7 @@ class World(
         through_fields=("world", "user"),
     )
 
-    objects = WorldManager()
+    objects: WorldManager = WorldManager()
 
     # Need this, otherwise the Article.world relation conflicts with the parent
     # relations like Plane.world and such.
