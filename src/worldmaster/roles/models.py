@@ -80,11 +80,14 @@ class RoleTarget(models.Model):
         """If the user has VIEWER on this."""
         return self.user_is_role(user, Role.Type.VIEWER)
 
-    def _delete_implicit_roles(self, recursive: bool = True):
+    def _delete_implicit_roles(self, recursive: bool = True, exclude: Role | None = None):
         """Delete the implicit roles for this role target and optionally its
         children.
         """
-        self.roles.filter(explicit=False).delete()
+        qs = self.roles.filter(explicit=False)
+        if exclude is not None:
+            qs = qs.exclude(id=exclude.id)
+        qs.delete()
 
         if recursive:
             for child in self.children.all():

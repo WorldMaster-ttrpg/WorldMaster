@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.db import models
-from django.db.models.signals import post_save, pre_delete, pre_save
+from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 
 from .models import Role, RoleTarget
@@ -104,7 +104,9 @@ def role_pre_save(
     # that are necessary, but it's not a problem right now, especially for a
     # read-heavy setup.
     if not raw and instance.id is not None:
-        instance.target._delete_implicit_roles()
+        # Don't delete self.
+        instance.target._delete_implicit_roles(exclude=instance)
+
 
 @receiver(pre_delete, sender=Role)
 def role_pre_delete(
@@ -114,4 +116,17 @@ def role_pre_delete(
 ) -> None:
     """Delete all implicit roles for the target so they can be recalculated.
     """
-    instance.target._delete_implicit_roles()
+    if instance.explicit:
+        # Don't delete self.
+        instance.target._delete_implicit_roles(exclude=instance)
+
+@receiver(post_delete, sender=Role)
+def role_post_delete(
+    sender: type[models.Model],
+    instance: Role,
+    **kwargs: Any,
+) -> None:
+    """Delete all implicit roles for the target so they can be recalculated.
+    """
+    if instance.explicit:
+        instance.target._setup_implicit_roles()
