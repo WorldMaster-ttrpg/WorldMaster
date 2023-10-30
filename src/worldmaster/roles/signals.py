@@ -9,6 +9,23 @@ from django.dispatch import receiver
 from .models import Role, RoleTarget
 
 
+def _set_previous_target(role: Role) -> None:
+    """Set _previous_target if explicit."""
+    if role.explicit:
+        if role.id is None:
+            role._previous_target = None
+        else:
+            role._previous_target = Role.objects.get(id=role.id).target
+
+def _rebuild_role_targets(role: Role) -> None:
+    """Rebuild target and _previous_target if explicit."""
+    if role.explicit:
+        previous_target = role._previous_target
+        target = role.target
+        if previous_target is not None and previous_target != target:
+            previous_target._rebuild_roles()
+        target._rebuild_roles()
+
 @receiver(post_save, sender=RoleTarget)
 def role_target_post_save(
     sender: type[models.Model],
@@ -22,71 +39,8 @@ def role_target_post_save(
     This is applied when this role is saved, because the parent may have been
     changed.
     """
-    if not (raw or created):
-        instance._setup_implicit_roles()
-
-@receiver(pre_delete, sender=RoleTarget)
-def role_target_pre_delete(
-    sender: type[models.Model],
-    instance: RoleTarget,
-    **kwargs: Any,
-) -> None:
-    """Delete all implicit roles from this role target and its children recursively.
-    """
-    instance._delete_implicit_roles()
-
-@receiver(pre_save, sender=RoleTarget)
-def role_target_pre_save(
-    sender: type[models.Model],
-    instance: RoleTarget,
-    raw: bool,
-    **kwargs: Any,
-) -> None:
-    """Delete all implicit roles from this role target and its children
-    recursively if it is being re-parented.
-    """
-    if not raw and instance.id is not None:
-        # This will need to be changed if there are any other save modifications
-        # that could invalidate roles.
-        db_instance = RoleTarget.objects.get(id=instance.id)
-
-        if instance.parent != db_instance.parent:
-            instance._delete_implicit_roles()
-
-@receiver(post_save, sender=Role)
-def role_post_save(
-    sender: type[models.Model],
-    instance: Role,
-    raw: bool,
-    created: bool,
-    **kwargs: Any,
-) -> None:
-    """Grant implicit roles from a saved role.
-    """
     if not raw:
-        if created:
-            if instance.type in Role._INHERITED:
-                for child in instance.target.children.all():
-                    Role.objects.get_or_create(
-                        target=child,
-                        type=instance.type,
-                        user=instance.user,
-                        defaults={
-                            "explicit": False,
-                        },
-                    )
-            for sub in Role._SUB[instance.type]:
-                Role.objects.get_or_create(
-                    user=instance.user,
-                    target=instance.target,
-                    type=sub,
-                    defaults={
-                        "explicit": False,
-                    },
-                )
-        else:
-            # We already deleted everything.
-            instance.target._setup_implicit_roles()
+        instance._rebuild_roles()
 
 @receiver(pre_save, sender=Role)
 def role_pre_save(
@@ -103,10 +57,8 @@ def role_pre_save(
     # We could do some logic that crawls implicit roles and only deletes ones
     # that are necessary, but it's not a problem right now, especially for a
     # read-heavy setup.
-    if not raw and instance.id is not None:
-        # Don't delete self.
-        instance.target._delete_implicit_roles(exclude=instance)
-
+    if not raw:
+        _set_previous_target(instance)
 
 @receiver(pre_delete, sender=Role)
 def role_pre_delete(
@@ -116,9 +68,20 @@ def role_pre_delete(
 ) -> None:
     """Delete all implicit roles for the target so they can be recalculated.
     """
-    if instance.explicit:
-        # Don't delete self.
-        instance.target._delete_implicit_roles(exclude=instance)
+    _set_previous_target(instance)
+
+@receiver(post_save, sender=Role)
+def role_post_save(
+    sender: type[models.Model],
+    instance: Role,
+    raw: bool,
+    created: bool,
+    **kwargs: Any,
+) -> None:
+    """Rebuild roles for the target and the previous target.
+    """
+    if not raw:
+        _rebuild_role_targets(instance)
 
 @receiver(post_delete, sender=Role)
 def role_post_delete(
@@ -126,7 +89,6 @@ def role_post_delete(
     instance: Role,
     **kwargs: Any,
 ) -> None:
-    """Delete all implicit roles for the target so they can be recalculated.
+    """Rebuild roles for the target.
     """
-    if instance.explicit:
-        instance.target._setup_implicit_roles()
+    _rebuild_role_targets(instance)

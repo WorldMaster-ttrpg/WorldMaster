@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Generic, Self, TypeVar
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from django.contrib.auth.models import AbstractUser, AnonymousUser
     from django.db.models.manager import RelatedManager
     from worldmaster.worldmaster.models import User
@@ -80,20 +82,19 @@ class RoleTarget(models.Model):
         """If the user has VIEWER on this."""
         return self.user_is_role(user, Role.Type.VIEWER)
 
-    def _delete_implicit_roles(self, recursive: bool = True, exclude: Role | None = None):
-        """Delete the implicit roles for this role target and optionally its
-        children.
+    def _rebuild_roles(self) -> None:
+        self._delete_implicit_roles()
+        self._setup_implicit_roles()
+
+    def _delete_implicit_roles(self) -> None:
+        """Delete the implicit roles for this role target recursively.
         """
-        qs = self.roles.filter(explicit=False)
-        if exclude is not None:
-            qs = qs.exclude(id=exclude.id)
-        qs.delete()
+        self.roles.filter(explicit=False).delete()
 
-        if recursive:
-            for child in self.children.all():
-                child._delete_implicit_roles()
+        for child in self.children.all():
+            child._delete_implicit_roles()
 
-    def _setup_implicit_roles(self, recursive: bool = True):
+    def _setup_implicit_roles(self) -> None:
         """Set up implicit roles for a role target.
         """
         parent = self.parent
@@ -115,27 +116,34 @@ class RoleTarget(models.Model):
                 )
 
         # Then sub-roles.
-        for user_id, type in self.roles.filter(
-            type__in=Role._SUB.keys(),
-        ).values_list(
-            "user_id",
-            "type",
-        ):
-            for sub in Role._SUB[type]:
-                self.roles.get_or_create(
-                    type=sub,
-                    user_id=user_id,
-                    defaults={
-                        "explicit": False,
-                    },
+        # We do these in order, because later ones can depend on prior ones.
+        for key, subtypes in Role._SUB.items():
+            for user_id, in self.roles.filter(
+                type=key,
+            ).values_list(
+                "user_id",
+            ):
+                Role.objects.bulk_create(
+                    [Role(
+                        target=self,
+                        type=subtype,
+                        user_id=user_id,
+                        explicit=False,
+                    ) for subtype in subtypes],
+                    ignore_conflicts=True,
                 )
 
-        if recursive:
-            for child in self.children.all():
-                child._setup_implicit_roles()
+        for child in self.children.all():
+            child._setup_implicit_roles()
 
 class Role(models.Model):
     """A role, giving a user specific privileges on a specific target."""
+
+    __slots__ = (
+        "_previous_target",
+    )
+
+    _previous_target: None | RoleTarget
 
     class Type(models.IntegerChoices):
         # Admin permission on the item.  This is not called "owner", because
@@ -246,8 +254,16 @@ class Role(models.Model):
         cls.objects.filter(explicit=False).delete()
         # This is a naive implementation.  We could probably do better by
         # Sharing some implementation between the signals and this.
-        for role in cls.objects.all():
+        for role in cls.objects.filter(explicit=True).all():
             role.save()
+
+    def clean(self):
+        if self.id is not None and not self.explicit:
+            raise ValidationError(
+                {
+                    "explicit": "Implicit roles may not be updated",
+                },
+            )
 
     __repr__ = __str__
 

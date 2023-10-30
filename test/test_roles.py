@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from worldmaster.roles.models import Role, RoleTarget
 from worldmaster.wiki.models import Article
@@ -836,3 +837,27 @@ class RoleTestCase(TestCase):
         self.assertFalse(self.world_target.user_is_master(self.user))
         self.assertFalse(self.world_target.user_is_editor(self.user))
         self.assertFalse(self.world_target.user_is_viewer(self.user))
+
+    def test_save_implicit_fails(self):
+        self.plane_target.roles.create(
+            user=self.user,
+            type=Role.Type.EDITOR,
+        )
+
+        with self.assertRaises(ValidationError):
+            # We should never try to save an implicit role.
+            self.plane_target.roles.get(
+                user=self.user,
+                type=Role.Type.VIEWER,
+            ).full_clean()
+
+        # We can, however, make an explicit role implicit
+        role = self.plane_target.roles.get(
+            user=self.user,
+            type=Role.Type.VIEWER,
+        )
+        role.explicit = True
+        role.full_clean()
+        role.save()
+
+
