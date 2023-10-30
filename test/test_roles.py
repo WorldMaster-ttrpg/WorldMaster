@@ -28,8 +28,7 @@ class RoleTestCase(TestCase):
             slug="world",
             name="World",
         )
-        self.plane = Plane.objects.create(
-            world=self.world,
+        self.plane = self.world.plane_set.create(
             slug="plane",
             name="Plane",
         )
@@ -77,8 +76,7 @@ class RoleTestCase(TestCase):
     def test_other_not_inherit(self):
         for type in Role.Type:
             if type is not Role.Type.MASTER:
-                if not Role.objects.filter(
-                    target=self.world_target,
+                if not self.world_target.roles.filter(
                     user=self.user,
                     type=type,
                 ).exists():
@@ -425,8 +423,7 @@ class RoleTestCase(TestCase):
     def test_anonymous_other_not_inherit(self):
         for type in Role.Type:
             if type not in Role._INHERITED:
-                Role.objects.get_or_create(
-                    target=self.world_target,
+                self.world_target.roles.get_or_create(
                     user=None,
                     type=type,
                 )
@@ -748,8 +745,7 @@ class RoleTestCase(TestCase):
             type=Role.Type.MASTER,
         )
 
-        Role.objects.get_or_create(
-            target=self.plane_target,
+        self.plane_target.roles.get_or_create(
             user=self.user,
             type=Role.Type.EDITOR,
         )
@@ -758,3 +754,85 @@ class RoleTestCase(TestCase):
             Plane.objects.visible_to(self.user).count(),
             1,
         )
+
+    def test_role_delete(self):
+        self.world_target.roles.create(
+            user=self.user,
+            type=Role.Type.VIEWER,
+        )
+        self.assertFalse(self.world_target.user_is_master(self.user))
+        self.assertFalse(self.world_target.user_is_editor(self.user))
+        self.assertTrue(self.world_target.user_is_viewer(self.user))
+        self.assertFalse(self.plane_target.user_is_master(self.user))
+        self.assertFalse(self.plane_target.user_is_editor(self.user))
+        self.assertFalse(self.plane_target.user_is_viewer(self.user))
+
+        self.world_target.roles.create(
+            user=self.user,
+            type=Role.Type.EDITOR,
+        )
+        self.assertFalse(self.world_target.user_is_master(self.user))
+        self.assertTrue(self.world_target.user_is_editor(self.user))
+        self.assertTrue(self.world_target.user_is_viewer(self.user))
+        self.assertFalse(self.plane_target.user_is_master(self.user))
+        self.assertFalse(self.plane_target.user_is_editor(self.user))
+        self.assertFalse(self.plane_target.user_is_viewer(self.user))
+
+        self.world_target.roles.get(
+            user=self.user,
+            type=Role.Type.VIEWER,
+        ).delete()
+        self.assertFalse(self.world_target.user_is_master(self.user))
+        self.assertTrue(self.world_target.user_is_editor(self.user))
+        self.assertTrue(self.world_target.user_is_viewer(self.user))
+        self.assertFalse(self.plane_target.user_is_master(self.user))
+        self.assertFalse(self.plane_target.user_is_editor(self.user))
+        self.assertFalse(self.plane_target.user_is_viewer(self.user))
+
+        self.world_target.roles.get(
+            user=self.user,
+            type=Role.Type.EDITOR,
+        ).delete()
+
+        self.assertFalse(self.world_target.user_is_master(self.user))
+        self.assertFalse(self.world_target.user_is_editor(self.user))
+        self.assertFalse(self.world_target.user_is_viewer(self.user))
+        self.assertFalse(self.plane_target.user_is_master(self.user))
+        self.assertFalse(self.plane_target.user_is_editor(self.user))
+        self.assertFalse(self.plane_target.user_is_viewer(self.user))
+
+        self.world_target.roles.create(
+            user=self.user,
+            type=Role.Type.MASTER,
+        )
+        self.assertTrue(self.world_target.user_is_master(self.user))
+        self.assertTrue(self.world_target.user_is_editor(self.user))
+        self.assertTrue(self.world_target.user_is_viewer(self.user))
+        self.assertTrue(self.plane_target.user_is_master(self.user))
+        self.assertTrue(self.plane_target.user_is_editor(self.user))
+        self.assertTrue(self.plane_target.user_is_viewer(self.user))
+
+        self.plane_target.roles.update_or_create(
+            user=self.user,
+            type=Role.Type.EDITOR,
+            defaults={
+                "explicit": True,
+            },
+        )
+        self.world_target.roles.get(
+            user=self.user,
+            type=Role.Type.MASTER,
+        ).delete()
+
+        self.assertFalse(self.world_target.user_is_master(self.user))
+        self.assertFalse(self.world_target.user_is_editor(self.user))
+        self.assertFalse(self.world_target.user_is_viewer(self.user))
+        self.assertFalse(self.plane_target.user_is_master(self.user))
+        self.assertTrue(self.plane_target.user_is_editor(self.user))
+        self.assertTrue(self.plane_target.user_is_viewer(self.user))
+
+        self.plane.delete()
+
+        self.assertFalse(self.world_target.user_is_master(self.user))
+        self.assertFalse(self.world_target.user_is_editor(self.user))
+        self.assertFalse(self.world_target.user_is_viewer(self.user))

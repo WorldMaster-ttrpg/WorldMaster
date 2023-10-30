@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
@@ -9,6 +9,9 @@ from django.urls import reverse
 from worldmaster.roles.models import RoleTargetBase, RoleTargetManager
 from worldmaster.wiki.models import ArticleBase
 from worldmaster.worldmaster.validators import validate_not_reserved
+
+if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
 
 User = get_user_model()
 
@@ -76,6 +79,8 @@ class World(
     )
 
     objects: WorldManager = WorldManager()
+
+    planes: RelatedManager[Plane]
 
     # Need this, otherwise the Article.world relation conflicts with the parent
     # relations like Plane.world and such.
