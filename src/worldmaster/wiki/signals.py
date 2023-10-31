@@ -1,12 +1,11 @@
-from contextlib import suppress
 from typing import Any
 
 from django.db import models
 from django.db.models.signals import post_delete, pre_save
 from django.dispatch import receiver
-from worldmaster.roles.models import RoleTarget, RoleTargetBase
+from worldmaster.roles.models import RoleTarget
 
-from .models import Article, Section
+from .models import Article, ArticleBase, Section
 
 
 @receiver(pre_save, sender=Article)
@@ -36,14 +35,22 @@ def add_section_role_target(
             parent=instance.article.role_target,
         )
 
-@receiver(post_delete, sender=Article)
-@receiver(post_delete, sender=Section)
-def delete_role_target(
-    sender: type[models.Model],
-    instance: RoleTargetBase,
+# Automatically set up article deletion.
+# This will not catch any classes that do not exist before this signal is
+# registered, or articles that are manually set up without using ArticleBase.
+def delete_article(
+    sender: type[ArticleBase],
+    instance: ArticleBase,
     **kwargs: Any,
 ) -> None:
-    """Delete the role_target where appropriate and possible."""
-    # Something else may be using the role_target.
-    with suppress(models.RestrictedError):
-        instance.role_target.delete()
+    """Delete the article."""
+    if instance.article.id is not None:
+        instance.article.delete()
+
+def _recursively_connect_children(cls: type[ArticleBase]):
+    for subclass in cls.__subclasses__():
+        if not subclass._meta.abstract:
+            post_delete.connect(delete_article, sender=subclass)
+        _recursively_connect_children(subclass)
+
+_recursively_connect_children(ArticleBase)

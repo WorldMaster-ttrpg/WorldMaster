@@ -25,11 +25,11 @@ class RoleTestCase(TestCase):
         self.other_user = User.objects.create(username="othertest")
         self.other_user.set_unusable_password()
 
-        self.world = World.objects.create(
+        self.world: World = World.objects.create(
             slug="world",
             name="World",
         )
-        self.plane = self.world.plane_set.create(
+        self.plane: Plane = self.world.plane_set.create(
             slug="plane",
             name="Plane",
         )

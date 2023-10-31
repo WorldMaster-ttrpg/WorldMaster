@@ -26,7 +26,7 @@ class RoleTarget(models.Model):
     reference this.
     """
 
-    id: int
+    id: int | None
 
     parent: models.ForeignKey[RoleTarget | None, RoleTarget | None] = models.ForeignKey(
         "self",
@@ -179,7 +179,7 @@ class Role(models.Model):
         Type.MASTER,
     ))
 
-    id: int
+    id: int | None
 
     target: models.ForeignKey[RoleTarget, RoleTarget] = models.ForeignKey(
         RoleTarget,
@@ -303,11 +303,11 @@ class RoleTargetBase(models.Model):
 
     # ForeignKey instead of OneToOneField because World models and their wiki
     # articles share role targets
-    role_target = models.ForeignKey(
+    role_target: models.ForeignKey[RoleTarget, RoleTarget] = models.ForeignKey(
         RoleTarget,
         null=False,
         blank=False,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="+",
     )
 

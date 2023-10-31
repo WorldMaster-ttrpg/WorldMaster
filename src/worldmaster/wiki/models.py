@@ -24,14 +24,11 @@ def _load_int(value: str) -> int | None:
 class Article(RoleTargetBase, models.Model):
     """Represents a Wiki article."""
 
+    id: int | None
+
     sections: models.Manager[Section]
 
     objects: RoleTargetManager[Article] = RoleTargetManager()
-
-    # FIXME
-    def body_text(self) -> str:
-        """Get the joined text of all the sections of this article."""
-        return "\n\n".join(str(section.body) for section in self.sections.order_by("order"))
 
     def update_sections(self, user: AbstractUser | AnonymousUser, data: QueryDict):
         """Update this article's sections using a POST dictionary."""
@@ -84,7 +81,9 @@ class Article(RoleTargetBase, models.Model):
 class Section(RoleTargetBase, models.Model):
     """Represents a part of a Wiki article."""
 
-    article = models.ForeignKey(
+    id: int | None
+
+    article: models.ForeignKey[Article, Article] = models.ForeignKey(
         Article,
         blank=False,
         null=False,
@@ -118,14 +117,16 @@ class Section(RoleTargetBase, models.Model):
             models.Index(fields=("article", "order")),
         ]
 
+        ordering = ("article", "order")
+
 class ArticleBase(models.Model):
     """An abstract base that gives an article field to a model."""
 
-    article = models.OneToOneField(
+    article: models.OneToOneField[Article, Article] = models.OneToOneField(
         Article,
         null=False,
         blank=False,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="+",
     )
 

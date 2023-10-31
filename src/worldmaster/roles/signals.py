@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import Any
 
 from django.db import models
 from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 
-from .models import Role, RoleTarget
+from .models import Role, RoleTarget, RoleTargetBase
 
 
 def _set_previous_target(role: Role) -> None:
@@ -92,3 +93,25 @@ def role_post_delete(
     """Rebuild roles for the target.
     """
     _rebuild_role_targets(instance)
+
+# Automatically set up roletarget deletion signals.
+# This will not catch any classes that do not exist before this signal is
+# registered, or role_targets that are manually set up without using RoleTargetBase.
+def delete_role_target(
+    sender: type[RoleTargetBase],
+    instance: RoleTargetBase,
+    **kwargs: Any,
+) -> None:
+    """Delete the role_target where appropriate and possible."""
+    # Something else may be using the role_target.
+    with suppress(models.ProtectedError):
+        if instance.role_target.id is not None:
+            instance.role_target.delete()
+
+def _recursively_connect_children(cls: type[RoleTargetBase]):
+    for subclass in cls.__subclasses__():
+        if not subclass._meta.abstract:
+            post_delete.connect(delete_role_target, sender=subclass)
+        _recursively_connect_children(subclass)
+
+_recursively_connect_children(RoleTargetBase)
