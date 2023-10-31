@@ -1,13 +1,13 @@
-from contextlib import suppress
-from typing import Any, TypeVar
+from __future__ import annotations
 
-from django.db import models
-from django.db.models.signals import post_delete, post_save, pre_save
+from typing import Any
+
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from worldmaster.roles.models import Role, RoleTarget
 from worldmaster.wiki.models import Article
 
-from .models import Entity, Event, Plane, Player, World
+from .models import Entity, Plane, Player, World
 
 
 @receiver(pre_save, sender=World)
@@ -23,14 +23,11 @@ def add_world_article_and_share_role_target(
         instance.article = article
         instance.role_target = article.role_target
 
-PlaneEntityEvent = TypeVar("PlaneEntityEvent", Plane, Entity, Event)
-
 @receiver(pre_save, sender=Plane)
 @receiver(pre_save, sender=Entity)
-@receiver(pre_save, sender=Event)
 def add_nonworld_article_and_share_role_target(
-    sender: type[PlaneEntityEvent],
-    instance: PlaneEntityEvent,
+    sender: type[Plane] | type[Entity],
+    instance: Plane | Entity,
     raw: bool,
     **kwargs: Any,
 ) -> None:
@@ -50,34 +47,6 @@ def add_nonworld_article_and_share_role_target(
         )
         instance.article = article
         instance.role_target = article.role_target
-
-WorldPlaneEntityEvent = TypeVar("WorldPlaneEntityEvent", World, Plane, Entity, Event)
-
-@receiver(post_delete, sender=World)
-@receiver(post_delete, sender=Plane)
-@receiver(post_delete, sender=Entity)
-@receiver(post_delete, sender=Event)
-def delete_role_target(
-    sender: type[WorldPlaneEntityEvent],
-    instance: WorldPlaneEntityEvent,
-    **kwargs: Any,
-) -> None:
-    """Delete the role_target where appropriate and possible."""
-    # Something else may be using the role_target.
-    with suppress(models.RestrictedError):
-        instance.role_target.delete()
-
-@receiver(post_delete, sender=World)
-@receiver(post_delete, sender=Plane)
-@receiver(post_delete, sender=Entity)
-@receiver(post_delete, sender=Event)
-def delete_article(
-    sender: type[WorldPlaneEntityEvent],
-    instance: WorldPlaneEntityEvent,
-    **kwargs: Any,
-) -> None:
-    """Delete the article."""
-    instance.article.delete()
 
 @receiver(post_save, sender=Player)
 def add_viewer_role_to_player(

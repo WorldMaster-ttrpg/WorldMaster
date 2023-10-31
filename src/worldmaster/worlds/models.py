@@ -12,8 +12,9 @@ from worldmaster.worldmaster.validators import validate_not_reserved
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
-
-User = get_user_model()
+    from worldmaster.worldmaster.models import User
+else:
+    User = get_user_model()
 
 class Timestamped(models.Model):
     """Abstract model for timestamps."""
@@ -44,6 +45,9 @@ class Slugged(models.Model):
         validators=[MinLengthValidator(3), validate_not_reserved],
     )
 
+    plane_set: RelatedManager[Plane]
+    entity_set: RelatedManager[Entity]
+
     def __str__(self) -> str:
         return self.name
 
@@ -70,7 +74,9 @@ class World(
     "universe".
     """
 
-    players = models.ManyToManyField(
+    id: int | None
+
+    players: models.ManyToManyField[User, User] = models.ManyToManyField(
         User,
         related_name="worlds",
         related_query_name="world",
@@ -99,11 +105,13 @@ class World(
 class Player(models.Model):
     """A junction table to manage what users are players of a world."""
 
-    world = models.ForeignKey(
+    id: int | None
+
+    world: models.ForeignKey[World, World] = models.ForeignKey(
         World,
         on_delete=models.CASCADE,
     )
-    user = models.ForeignKey(
+    user: models.ForeignKey[User, User] = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
     )
@@ -128,7 +136,7 @@ class WorldChild(
 ):
     """A model that's the child of a world."""
 
-    world = models.ForeignKey(
+    world: models.ForeignKey[World, World] = models.ForeignKey(
         World,
         null=False,
         blank=False,
@@ -156,6 +164,8 @@ class Plane(WorldChild):
     This is a single physical universe.
     """
 
+    id: int | None
+
     objects: WorldChildManager[Plane] = WorldChildManager()
 
     def get_absolute_url(self) -> str:
@@ -165,26 +175,21 @@ class Plane(WorldChild):
         return self.slug
 
 class Entity(WorldChild):
-    """Something that exists somewhere.
+    """Any noun that is not a World or Plane.
 
-    This is for people, places, things, domains, and the like.
+    This is for people, places, things, domains, concepts, events, etc.  This
+    does not need to exist in a place or time; it is made to exist in a place
+    and time by linking it to an area type.  It may be linked to multiple area
+    types, may exist in multiple places at once, may exist across multiple
+    planes, etc.
     """
+
+    id: int | None
 
     objects: WorldChildManager[Entity] = WorldChildManager()
 
     def get_absolute_url(self) -> str:
         return reverse("worlds:entity", kwargs={"world_slug": self.world.slug, "entity_slug": self.slug})
-
-    def __str__(self) -> str:
-        return self.slug
-
-class Event(WorldChild):
-    """Something that happens for a particular length of time at a specific location."""
-
-    objects: WorldChildManager[Event] = WorldChildManager()
-
-    def get_absolute_url(self) -> str:
-        return reverse("worlds:event", kwargs={"world_slug": self.world.slug, "event_slug": self.slug})
 
     def __str__(self) -> str:
         return self.slug

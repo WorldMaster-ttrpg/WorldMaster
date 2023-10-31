@@ -10,4 +10,6 @@ class User(AbstractUser):
     just makes it easier to add fields later.
     """
 
+    id: int | None
+
     objects = UserManager()
