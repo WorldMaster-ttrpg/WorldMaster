@@ -9,6 +9,11 @@ RUN \
   apt update; \
   apt upgrade -y; \
   apt install -y \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev \
+    libspatialite-dev \
+    libsqlite3-mod-spatialite \
     node-typescript \
     nodejs \
     python3-dev \

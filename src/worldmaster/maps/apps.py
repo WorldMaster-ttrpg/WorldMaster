@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class JinjaConfig(AppConfig):
+class MapsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "worldmaster.jinja"
+    name = "worldmaster.maps"

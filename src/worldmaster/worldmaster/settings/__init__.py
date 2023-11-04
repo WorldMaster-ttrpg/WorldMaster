@@ -15,7 +15,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "worldmaster.jinja",
+    "worldmaster.maps",
     "worldmaster.worlds",
     "worldmaster.wiki",
     "worldmaster.roles",
@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.gis",
     "django_extensions",
 ]
 
