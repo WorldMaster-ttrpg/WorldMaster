@@ -13,6 +13,24 @@ metadata:
   name: worldmaster-dev
 spec:
   initContainers:
+    - name: init-postgres
+      image: docker.io/postgres:16
+      command:
+        - sh
+        - '-c'
+        - |
+          set -eux
+          i=0
+
+          while [ "$((i += 1))" -le 60 ]; do
+            pg_isready -h postgres && exit 0
+
+            sleep 1
+          done
+
+          echo "Postgres did not start" >&2
+          exit 1
+
     - name: init-dev
       image: 'docker.io/worldmasterttrpg/worldmaster:development'
       volumeMounts:
@@ -20,11 +38,16 @@ spec:
           name: workdir
         - mountPath: /opt/worldmaster/venv
           name: venv
+        - mountPath: /run/secrets/postgres
+          name: postgres
       env:
         - name: DJANGO_SETTINGS_MODULE
           value: worldmaster.worldmaster.settings.development
         - name: VENV
           value: /opt/worldmaster/venv
+        - name: DATABASE_PASSWORD_FILE
+          value: postgres/password
+
       workingDir: /opt/worldmaster/work
 
       # Disable SELinux security label isolation, otherwise bind mounts don't work.
@@ -49,13 +72,17 @@ spec:
           name: workdir
         - mountPath: /opt/worldmaster/venv
           name: venv
+        - mountPath: /run/secrets/postgres
+          name: postgres
       env:
         - name: DJANGO_SETTINGS_MODULE
           value: worldmaster.worldmaster.settings.development
         - name: VENV
           value: /opt/worldmaster/venv
-      workingDir: /opt/worldmaster/work
+        - name: DATABASE_PASSWORD_FILE
+          value: postgres/password
 
+      workingDir: /opt/worldmaster/work
       # Disable SELinux security label isolation, otherwise bind mounts don't work.
       securityContext:
         seLinuxOptions:
@@ -75,6 +102,9 @@ spec:
     - name: venv
       persistentVolumeClaim:
         claimName: worldmaster-venv
+    - name: postgres
+      secret:
+        secretName: worldmaster-postgres
     - name: workdir
       hostPath:
         path: .

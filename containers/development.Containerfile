@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM docker.io/python:3.12-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -9,16 +9,13 @@ RUN \
   apt update; \
   apt upgrade -y; \
   apt install -y \
+    build-essential \
     libgdal-dev \
     libgeos-dev \
+    libpq-dev \
     libproj-dev \
-    libspatialite-dev \
-    libsqlite3-mod-spatialite \
     node-typescript \
     nodejs \
-    python3-dev \
-    python3-pip \
-    python3-venv \
     tini \
     wget \
     yarnpkg \
@@ -36,8 +33,6 @@ RUN \
   wget -O watchexec.deb https://github.com/watchexec/watchexec/releases/download/v1.23.0/watchexec-1.23.0-x86_64-unknown-linux-gnu.deb; \
   apt install -y ./watchexec.deb; \
   :
-
-WORKDIR /mnt/source
 
 # Note: We always run development boxes as root.  This is because root in the
 # container, by default, maps to the user outside the container. This can give

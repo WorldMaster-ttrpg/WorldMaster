@@ -19,28 +19,39 @@ push-image name: (image name)
 	podman image push docker.io/worldmasterttrpg/worldmaster:{{name}}
 
 # Start up development pods.  This is necessary to access the site on a web browser.
-pods: django watchtsc
+pods: postgres django watchtsc
 
 # Tear down running worldmaster pods.
 down:
-	-just down-django
-	-just down-watchtsc
-	-just down-dev
+	-just kube-down django
+	-just kube-down watchtsc
+	-just kube-down dev
+	-just kube-down postgres
+
+# Create the worldmaster network.
+network:
+	podman network inspect worldmaster >/dev/null 2>&1 || \
+		podman network create worldmaster
+
+# Run the postgres pod.
+postgres: network
+	podman pod inspect worldmaster-postgres >/dev/null 2>&1 || \
+		podman kube play --network worldmaster ./containers/kube/postgres.yml
 
 # Run the django pod, which runs `runserver`.
-django:
+django: network postgres
 	podman pod inspect worldmaster-django >/dev/null 2>&1 || \
-		podman kube play ./containers/kube/django.yml
+		podman kube play --network worldmaster ./containers/kube/django.yml
 
 # Run the watchtsc pod, which compiles typescript to js on all changes into the shared static volume.
-watchtsc:
+watchtsc: network
 	podman pod inspect worldmaster-watchtsc >/dev/null 2>&1 || \
-		podman kube play ./containers/kube/watchtsc.yml
+		podman kube play --network worldmaster ./containers/kube/watchtsc.yml
 
 # Start up the dev pod.  This is like the django pod, but just sets up the venv and drops you into a shell.
-dev:
+dev: network postgres
 	podman pod inspect worldmaster-dev >/dev/null 2>&1 || \
-		podman kube play ./containers/kube/dev.yml
+		podman kube play --network worldmaster ./containers/kube/dev.yml
 
 # Run a shell on the dev pod.
 dev-shell: dev
@@ -53,14 +64,6 @@ django-admin *args: dev
 test: (django-admin 'test')
 makemigrations: (django-admin 'makemigrations')
 
-# Tear down the django pod.
-down-django:
-	podman kube down ./containers/kube/django.yml
-
-# Tear down the watchtsc pod.
-down-watchtsc:
-	podman kube down ./containers/kube/watchtsc.yml
-
-# Tear down the dev pod.
-down-dev:
-	podman kube down ./containers/kube/dev.yml
+# Tear down the pod.
+kube-down pod:
+	podman kube down ./containers/kube/{{pod}}.yml

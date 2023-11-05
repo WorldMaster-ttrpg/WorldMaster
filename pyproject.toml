@@ -3,7 +3,7 @@ name = 'worldmaster'
 version = '0.1.0'
 description = 'The WorldMaster tabletop RPG Wiki and game manager'
 readme = 'README.md'
-requires-python = '>= 3.10'
+requires-python = '>= 3.12'
 license = { text = 'AGPL-3.0-or-later' }
 keywords = ['rpg', 'games', 'wiki']
 classifiers = [
@@ -21,11 +21,12 @@ dependencies = [
   'ptpython >= 3.0.22',
   'Werkzeug >= 2.2.2, < 3.0.0',
   'Jinja2 >= 3.1.2, < 4.0.0',
+  'django-extensions',
+  'psycopg[c] >= 3.1.12, < 4',
 ]
 
 [project.optional-dependencies]
 dev = [
-  'django-extensions',
   'ruff',
 ]
 
