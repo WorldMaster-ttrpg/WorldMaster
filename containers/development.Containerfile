@@ -10,10 +10,7 @@ RUN \
   apt upgrade -y; \
   apt install -y \
     build-essential \
-    libgdal-dev \
-    libgeos-dev \
     libpq-dev \
-    libproj-dev \
     node-typescript \
     nodejs \
     tini \

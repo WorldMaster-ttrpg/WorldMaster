@@ -1,8 +1,9 @@
-from django.contrib.gis.db import models
+
+from django.db import models
 from django.db.models import F, Q
 from worldmaster.worlds.models import Entity, Plane
 
-from .fields import PolyhedralSurfaceField
+from .fields import PointField, PolyhedralSurfaceField
 
 
 class Presence(models.Model):
@@ -42,24 +43,19 @@ class Presence(models.Model):
     shape = PolyhedralSurfaceField(
         null=False,
         blank=False,
-        geography=False,
     )
 
-    position = models.PointField(
+    position = PointField(
         "The position, or the starting position if end_position is set",
         null=False,
         blank=False,
-        dim=3,
-        geography=False,
     )
 
-    end_position = models.PointField(
+    end_position = PointField(
         "The end position, if the presence moved",
         null=True,
         blank=True,
         default=None,
-        dim=3,
-        geography=False,
     )
 
     class Meta:
