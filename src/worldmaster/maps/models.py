@@ -1,17 +1,12 @@
-
-from typing import Any, cast
+from __future__ import annotations
 
 from django.db import models
 from django.db.models import F, Q
 from worldmaster.worlds.models import Entity, Plane
 
 from .fields import PointField, PolyhedralSurfaceField
+from .functions import IsClosed
 
-
-class IsClosed(models.Func):
-    function = "ST_IsClosed"
-    arity = 1
-    output_field = cast(Any, models.BooleanField())
 
 class Presence(models.Model):
     """An entity presence on the map of a plane.
