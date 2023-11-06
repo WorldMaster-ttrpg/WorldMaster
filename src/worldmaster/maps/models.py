@@ -1,11 +1,17 @@
 
+from typing import Any, cast
+
 from django.db import models
-from django.db.models import F, Func, Q
-from django.db.models.lookups import Exact
+from django.db.models import F, Q
 from worldmaster.worlds.models import Entity, Plane
 
 from .fields import PointField, PolyhedralSurfaceField
 
+
+class IsClosed(models.Func):
+    function = "ST_IsClosed"
+    arity = 1
+    output_field = cast(Any, models.BooleanField())
 
 class Presence(models.Model):
     """An entity presence on the map of a plane.
@@ -64,24 +70,21 @@ class Presence(models.Model):
             models.CheckConstraint(
                 check=Q(start_time__isnull=True) | Q(end_time__isnull=True) | Q(end_time__gt=F("start_time")),
                 name="end_time_after_start_time",
-                violation_error_message="If start_time and end_time exist, end_time must be greater than start_time",
+                violation_error_message="If start_time and end_time exist, end_time must be greater than start_time.",
             ),
             models.CheckConstraint(
                 check=Q(end_position__isnull=True) | Q(start_time__isnull=False) & Q(end_time__isnull=False),
                 name="end_position_needs_time_span",
-                violation_error_message="If end_position is not null, then start_time and end_time must not be null",
+                violation_error_message="If end_position is not null, then start_time and end_time must not be null.",
             ),
             models.CheckConstraint(
                 check=~Q(end_position=F("position")),
                 name="end_position_different_from_start",
-                violation_error_message="end_position must not equal position",
+                violation_error_message="end_position must not equal position.",
             ),
             models.CheckConstraint(
-                check=Exact(
-                    lhs=Func(F("shape"), function="ST_IsClosed"),
-                    rhs=True,
-                ),
+                check=IsClosed(F("shape")),
                 name="shape_must_be_closed",
-                violation_error_message="If start_time and end_time exist, end_time must be greater than start_time",
+                violation_error_message="Polyhedral shapes must be closed.",
             ),
         ]
