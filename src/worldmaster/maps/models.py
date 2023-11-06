@@ -1,6 +1,7 @@
 
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import F, Func, Q
+from django.db.models.lookups import Exact
 from worldmaster.worlds.models import Entity, Plane
 
 from .fields import PointField, PolyhedralSurfaceField
@@ -74,5 +75,13 @@ class Presence(models.Model):
                 check=~Q(end_position=F("position")),
                 name="end_position_different_from_start",
                 violation_error_message="end_position must not equal position",
+            ),
+            models.CheckConstraint(
+                check=Exact(
+                    lhs=Func(F("shape"), function="ST_IsClosed"),
+                    rhs=True,
+                ),
+                name="shape_must_be_closed",
+                violation_error_message="If start_time and end_time exist, end_time must be greater than start_time",
             ),
         ]
