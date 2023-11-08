@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from django.db import models
+from django.contrib.gis.db import models
 from django.db.models import F, Q
 from worldmaster.worlds.models import Entity, Plane
 
-from .fields import PointField, PolyhedralSurfaceField
-from .functions import IsClosed
+from . import functions
 
 
 class Presence(models.Model):
@@ -42,22 +41,35 @@ class Presence(models.Model):
        default=None,
     )
 
-    shape = PolyhedralSurfaceField(
+    shape = models.PolygonField(
+        "The 2D shape of the presence, with implicit Z coordinates of 0",
         null=False,
         blank=False,
+        dim=2,
+        srid=0,
     )
 
-    position = PointField(
+    height = models.FloatField(
+       "The height of this presence",
+       blank=False,
+       null=False,
+       default=0.0,
+    )
+
+    position = models.PointField(
         "The position, or the starting position if end_position is set",
         null=False,
         blank=False,
+        dim=3,
+        srid=0,
     )
 
-    end_position = PointField(
+    end_position = models.PointField(
         "The end position, if the presence moved",
         null=True,
         blank=True,
         default=None,
+        dim=3,
     )
 
     class Meta:
@@ -78,8 +90,8 @@ class Presence(models.Model):
                 violation_error_message="end_position must not equal position.",
             ),
             models.CheckConstraint(
-                check=IsClosed(F("shape")),
-                name="shape_must_be_closed",
-                violation_error_message="Polyhedral shapes must be closed.",
+                check=functions.IsPolygonCW(F("shape")),
+                name="shape_must_be_clockwise",
+                violation_error_message="Shapes must be clockwise.",
             ),
         ]

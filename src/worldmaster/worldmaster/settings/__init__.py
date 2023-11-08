@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.gis",
     "django_extensions",
 ]
 
@@ -117,7 +118,7 @@ LOGOUT_REDIRECT_URL = "worlds:worlds"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": get_secret("database name", default="worldmaster"),
         "USER": get_secret("database user", default="worldmaster"),
         "PASSWORD": get_secret("database password"),
