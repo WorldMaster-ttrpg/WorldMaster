@@ -9,10 +9,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
-from os import environ
-from pathlib import Path
-
-from ._util import get_secret
 
 ALLOWED_HOSTS = []
 
@@ -115,26 +111,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "auth:login"
 LOGIN_REDIRECT_URL = "worlds:worlds"
 LOGOUT_REDIRECT_URL = "worlds:worlds"
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": get_secret("database name", default="worldmaster"),
-        "USER": get_secret("database user", default="worldmaster"),
-        "PASSWORD": get_secret("database password"),
-        "HOST": get_secret("database host", default="postgres"),
-        "PORT": int(get_secret("database port", default=5432)),
-    },
-}
-
-# This might not make much sense when deployed in production, but it shouldn't really matter.
-_project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
-
-STATICFILES_DIRS = [
-    _project_root / "static",
-]
-
-FIXTURE_DIRS = [
-    environ.get("WORLDMASTER_FIXTURE", _project_root / "fixtures"),
-]
-

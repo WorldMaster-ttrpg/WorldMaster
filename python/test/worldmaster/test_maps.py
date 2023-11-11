@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.contrib.gis.geos import Point, Polygon
 from django.test import TestCase
 from worldmaster.maps.models import Presence
 from worldmaster.worlds.models import Entity, Plane, World
@@ -42,23 +43,25 @@ class MapsTestCase(TestCase):
         Presence.objects.create(
             entity=self.alpha,
             plane=self.plane,
-            shape=((
+            shape=Polygon((
                 (1, 1),
                 (1, -1),
                 (-1, -1),
                 (-1, 1),
-            ),),
-            position=(0, 0, 0),
+                (1, 1),
+            )),
+            position=Point(0, 0, 0),
         )
         Presence.objects.create(
             entity=self.beta,
             plane=self.plane,
-            shape=((
+            shape=Polygon((
                 (2, 2),
                 (2, -2),
                 (-2, -2),
                 (-2, 2),
-            ),),
-            position=(0, 0, 0),
+                (2, 2),
+            )),
+            position=Point(0, 0, 0),
         )
 
