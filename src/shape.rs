@@ -100,13 +100,12 @@ impl Vector2D {
     }
 }
 
-pub fn register<'a>(py: Python<'a>, parent: &'a PyModule) -> PyResult<&'a PyModule> {
-    let module = PyModule::new(py, "worldmaster.shape")?;
+pub fn module(_py: Python, module: &PyModule) -> PyResult<()> {
     module.add_class::<Vector2D>();
     module.add_class::<Vector3D>();
     module.add_class::<Points2D>();
     module.add_class::<Polygon2D>();
     module.add_class::<BaseHeight>();
     //module.add_class::<Shape3D>();
-    Ok(module)
+    Ok(())
 }
